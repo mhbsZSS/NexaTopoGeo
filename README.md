@@ -1,190 +1,49 @@
-# 🎬 TomFlix App - FATEC
+# NexaTopoGeo
+**Plataforma B2B para automação de peças técnicas, mapas e gestão em nuvem para escritórios de agrimensura.**
 
-Projeto acadêmico de desenvolvimento web estruturado em contêineres Docker, simulando uma plataforma de streaming. O sistema evoluiu de uma arquitetura monolítica (Atividade 1) para uma arquitetura baseada em microsserviços com comunicação em rede interna (Atividade 2).
+## 1. A dor
+Escritórios de agrimensura perdem dezenas de horas mensais formatando relatórios manualmente a partir de dados brutos e gerando croquis do zero no AutoCAD. Esse processo é lento, descentraliza arquivos pesados (DWG, RTK) em pen-drives e aumenta o risco de erros que causam devoluções em cartórios.
 
----
+## 2. Persona
+**Carlos, 42 anos, dono de um escritório de topografia.** Passa o dia em campo medindo propriedades e, ao voltar, precisa varar a noite formatando planilhas do SIGEF em memoriais descritivos no Word e desenhando polígonos no AutoCAD para não perder os prazos dos clientes.
 
-## 📌 Atividade 1: Estruturação Inicial e Banco de Dados
+## 3. Concorrentes e alternativas
+*   **O "jeito de sempre":** Digitação manual do SIGEF para o Word e desenho do zero no AutoCAD (alto risco de erro e extremo desperdício de tempo).
+*   **Planilhas de Excel:** Macros adaptadas que formatam texto, mas quebram frequentemente e não geram mapas.
+*   **Softwares Desktop (ex: Métrica TOPO):** Robustos, mas caros, presos a uma máquina local e com curva de aprendizado complexa.
 
-Nesta primeira etapa, o objetivo foi construir a interface principal da aplicação (Catálogo) e integrá-la a um banco de dados relacional (MariaDB) utilizando o FastAPI.
+## 4. Proposta de valor
+Automatize a geração de memoriais descritivos e croquis base (DXF) direto do navegador, integrando gestão de prazos e armazenamento em nuvem em uma única plataforma SaaS.
 
-### Funcionalidades Implementadas
-* Construção da interface com HTML/CSS (Jinja2).
-* Modelagem do banco de dados (Tabelas: Usuários, Favoritos, Comentários).
-* Integração com a API externa do TheMovieDB.
-* Conteinerização do banco de dados e da aplicação principal via `docker-compose`.
+## 5. Modelo de receita com Stripe
+*   **Plano Free:** Uso gratuito para 2 projetos/mês, com PDFs gerados contendo marca d'água da plataforma.
+*   **Plano Pro (R$ 149,90/mês):** Geração ilimitada de relatórios sem marca d'água, processamento de croquis automatizados (DXF) e storage de arquivos pesados (DWG/RINEX) em nuvem.
 
-### Evidências Visuais (Atividade 1)
+## 6. Métricas de sucesso
+*   **MRR:** Receita Recorrente Mensal via Stripe.
+*   **Projetos Processados:** Volume de dados brutos convertidos em peças técnicas com sucesso.
+*   **Retenção:** Escritórios que mantêm a assinatura ativa após o 3º mês de uso.
 
-**1. Tela de Login e Cadastro (Visual Dark Mode):**
-![Tela de Login](assets/img/telaLogin.png)
+## 7. Lean Canvas
 
-**2. Catálogo de Filmes e Integração TMDB:**
-![Tela do Catálogo](assets/img/catalogoTomflix.png)
+| BLOCO | RESPOSTA |
+| :--- | :--- |
+| **Problema** | 1. Arquivos pesados perdidos. 2. Horas gastas desenhando croquis base. 3. Formatação manual de memoriais sujeita a erros. |
+| **Segmentos** | Empresas de topografia, engenheiros e técnicos independentes. |
+| **Proposta de valor** | Única plataforma web que integra geração automática de mapas/memoriais com storage de engenharia. |
+| **Solução** | 1. Extração de dados brutos para gerar croquis (DXF) e relatórios. 2. Kanban de projetos. 3. Storage para CAD/Fotos. |
+| **Canais** | Redes sociais focadas em engenharia, tráfego pago B2B, LinkedIn. |
+| **Fontes de receita** | Assinatura SaaS mensal (Stripe). |
+| **Estrutura de custos** | Servidores Docker, MinIO (Storage), MariaDB, taxas Stripe. |
+| **Métricas-chave** | MRR, Churn Rate, Terabytes de storage utilizados. |
+| **Vantagem injusta** | Motor próprio (Python/ezdxf) que elimina a necessidade de desenhar polígonos iniciais no AutoCAD. |
 
-**3. Tabela de Usuários no Banco de Dados:**
-![Banco de Dados](assets/img/bancoDados.png)
+## 8. Mapa de Reaproveitamento da Arquitetura
 
----
-
-## 🔒 Atividade 2: Microsserviços e Recuperação de Senha
-
-Nesta segunda etapa, a arquitetura foi refatorada para isolar a responsabilidade de segurança. O acesso ao banco de dados para login e cadastro foi removido do Catálogo e transferido para um Microsserviço de Autenticação isolado.
-
-### Funcionalidades Implementadas
-* **Microsserviço de Autenticação:** Contêiner isolado rodando na porta interna 3000, invisível para a internet.
-* **Comunicação Interna:** O Catálogo agora atua como proxy, enviando requisições HTTP (`requests`) para o microsserviço.
-* **Recuperação de Senha Segura:** Geração de Tokens UUID únicos no banco de dados com limite de expiração ($\Delta t = 30 \text{ min}$).
-* **Serviço de E-mail (SMTP):** Integração com o Mailtrap para disparo de links de redefinição de senha em ambiente de testes.
-* **Sistema de Notificações (UX):** Redirecionamento inteligente com Flash Messages (Toasts) dinâmicas e coloridas na tela inicial.
-
-### Evidências Visuais (Atividade 2)
-
-**1. Recebimento do E-mail de Recuperação (Do Sandbox à Produção):**
-*Comprova a comunicação inicial do microsserviço via sandbox (Mailtrap) e a evolução para disparo transacional real em produção via servidor SMTP do Brevo (`smtp-relay.brevo.com` na porta `587` com `STARTTLS`), utilizando `MIMEMultipart` para renderização de e-mail estilizado em HTML com botão de ação.*
-![E-mail no Mailtrap](assets/img/emailMailTrap.png)
-![E-mail no Brevo](assets/img/emailBrevo.png)
-
-**2. Tela de Redefinição de Senha:**
-*Interface padronizada que injeta o token temporal oculto.*
-![Nova Senha](assets/img/novaSenha.png)
-
-**3. Validação de Segurança (Token Expirado/Inválido):**
-*Comprova que o sistema recusa a reutilização de links, exibindo alerta vermelho dinâmico.*
-![Erro de Token Inválido](assets/img/erroTokenInvalido.png)
-
-**4. Notificação de Sucesso:**
-*Comprova a sincronização do backend com a interface, exibindo alerta verde após a troca da senha.*
-![Sucesso na Troca de Senha](assets/img/alteracaoSenha.png)
-
----
-
-## 🛡️ Atividades 3 e 4: Autenticação, Autorização e RBAC
-
-Nestas etapas, o sistema evoluiu para identificar quem é o usuário (Autenticação) e definir exatamente o que ele tem permissão para fazer (Autorização). A segurança foi aplicada diretamente no servidor (backend), impedindo que manipulações na interface burlem as regras de negócios.
-
-### Funcionalidades Implementadas
-
-*   **Identidade e Sessão:** O Catálogo agora captura e exibe o nome e o papel (`role`) do usuário logado no cabeçalho.
-*   **Controle de Acesso Baseado em Papéis (RBAC):**
-    *   **Papel `usuario`:** Pode visualizar o catálogo, favoritar filmes, fazer comentários e apagar *apenas* os seus próprios comentários.
-    *   **Papel `admin`:** Possui todas as permissões acima, com a adição exclusiva de **Moderação**, podendo apagar o comentário de qualquer usuário da plataforma.
-*   **Enforcement Centralizado:** A validação real de permissão acontece no backend (API). Se um usuário comum forçar uma requisição de exclusão, o servidor recusa a ação imediatamente.
-*   **Renderização Dinâmica (Jinja2):** O botão de exclusão de comentários é injetado no HTML apenas se o usuário tiver os privilégios necessários.
-
-### Requisito 5: Arquitetura de Autorização
-O microsserviço deste projeto utiliza o **Padrão A — Enforcement centralizado**. 
-Toda ação sensível verifica o papel atual do usuário no momento da requisição, validando as informações diretamente com a sessão e o banco de dados. 
-
-**E se usássemos o Padrão B (Claims no JWT)?**
-Se a arquitetura fosse alterada para o Padrão B, o papel do usuário (`role`) viria assinado dentro do próprio token de login. A principal mudança no código seria a remoção das consultas extras ao banco para validar o nível de acesso, substituindo-as por uma função de decodificação do JWT. A vantagem seria o ganho de velocidade (menos requisições ao banco), mas a desvantagem seria a dificuldade de revogação imediata: se um `admin` fosse rebaixado a `usuario`, ele continuaria com poderes de moderação até que o seu token expirasse.
-
-### Evidências Visuais (Atividades 3 e 4)
-
-**1. Visão do Usuário Comum:** *O botão de moderação (Apagar) não é renderizado em comentários de terceiros.*
-![Visão do Usuário](assets/img/visaoUsuario.png)
-
-**2. Visão do Administrador (Moderação):** *O botão de moderação está disponível globalmente e a exclusão é efetuada com sucesso.*
-![Visão do Admin](assets/img/visaoAdmin.png)
-![Visão do Admin](assets/img/apagaComentarioAdmin.png)
-
-**3. Enforcement no Backend (Proteção 403):** *Comprova que o servidor bloqueia e retorna erro "403 Forbidden" caso um usuário tente forçar a rota de exclusão de terceiros.*
-![Erro 403](assets/img/erro403.png)
-
----
-
-## 📋 Atividade 5: Trilha de Auditoria (Event Logging) com Redis
-
-Nesta etapa, o projeto evoluiu de um registro passivo para um monitoramento ativo do comportamento dos usuários. Para não sobrecarregar o banco de dados relacional (MariaDB) com um fluxo constante de inserções, implementou-se o padrão de separação de responsabilidades (Segregation of Duties) através de um novo microsserviço apoiado por um banco em memória.
-
-### Arquitetura e Decisões Técnicas
-
-*   **Novo Microsserviço (`log-service`):** Um contêiner FastAPI isolado na rede interna do Docker, sem exposição de portas para o host, garantindo que logs não possam ser forjados externamente.
-*   **Banco em Memória (Redis Streams):** O Redis foi escolhido por sua altíssima velocidade em operações de escrita (write-heavy). Utilizou-se a estrutura de dados `Streams` (comandos `XADD` e `XREVRANGE`), que é nativamente desenhada para logs de eventos contínuos, garantindo ordenação cronológica rigorosa (timestamping automático) que uma simples estrutura de lista (`LPUSH`) não ofereceria de forma tão eficiente.
-*   **Rastreio Distribuído (Hooks):** O Catálogo e o Auth-Service atuam como produtores de eventos. Eles disparam requisições assíncronas internas relatando sucessos e falhas diretamente para o `log-service`.
-
-### Eventos Monitorados
-O sistema rastreia e armazena centralmente ações críticas, registrando *Quem*, *O que*, *Quando* e o *IP de Origem*:
-- `login` e `logout`
-- `favoritou_filme_{id}` / `desfavoritou_filme_{id}`
-- `comentou_no_filme_{id}`
-- `apagou_comentario_{id}` (Ação de moderação)
-- **Segurança:** `tentativa_negada_403_*` (Gera alerta imediato sobre tentativas de violação de privilégios).
-
-### Evidências Visuais (Atividade 5)
-
-**1. A Nova Infraestrutura (Docker Compose):** *Comprova a adição do serviço Redis e do Log-Service operando exclusivamente na rede interna.*
-![Infraestrutura Docker](assets/img/docker_redis.png)
-
-**2. Consulta de Logs (Visão do Admin):** *O endpoint protegido (`/auditoria`) exibe com sucesso o fluxo de ações dos usuários organizados cronologicamente, incluindo as interceptações de erro 403.*
-![Painel de Auditoria](assets/img/painel_auditoria.png)
-
-**3. E-mail Transacional em Produção (Brevo SMTP):** *Comprova o recebimento real do e-mail de recuperação de senha na caixa de entrada do usuário, utilizando autenticação TLS via Brevo e template estilizado em HTML com botão de ação direta para redefinição.*
-![E-mail Brevo](assets/img/emailBrevo.png)
-
----
-
-## 👤 Atividade 6: Upload e Perfil do Usuário
-
-Nesta etapa final do bimestre, o catálogo ganhou contornos de rede social com a introdução de uma página de perfil personalizável. A principal evolução arquitetural foi a integração de um serviço de *Object Storage* local para lidar de forma escalável com o armazenamento de arquivos binários, aliviando o banco de dados relacional.
-
-### Arquitetura e Decisões Técnicas
-
-*   **Object Storage (MinIO):** Contêiner dedicado operando como um servidor de armazenamento compatível com o padrão AWS S3. As imagens de perfil são injetadas fisicamente em *buckets* privados no MinIO, enquanto o MariaDB armazena unicamente a referência em texto (nome gerado com UUID) na coluna `avatar_url`.
-*   **Padrão BFF (Backend for Frontend):** Para contornar restrições de rede e manter a segurança da infraestrutura (já que a porta do MinIO não é exposta ao host), o FastAPI foi configurado como um *proxy*. O backend busca o binário da imagem diretamente na rede interna do Docker e o transmite para o navegador cliente utilizando `StreamingResponse`.
-*   **Segurança e Validação de Upload:** O recebimento de dados via `multipart/form-data` possui validações rigorosas no servidor (API). O sistema bloqueia a transação caso o arquivo não possua um *MIME type* de imagem (`image/*`) ou exceda o limite rígido de 2MB de tamanho.
-*   **Interface Dinâmica:** Renderização do avatar circular e biografia na nova rota `/perfil`, além da injeção da miniatura atualizada no cabeçalho global (Navbar) ao lado das credenciais da sessão.
-
-### Evidências Visuais (Atividade 6)
-
-**1. Página de Perfil do Usuário:**
-*Comprova a exibição da interface de upload, o avatar recuperado com sucesso do MinIO via proxy, biografia atualizada no MariaDB e a galeria de filmes favoritados.*
-![Perfil do Usuário](assets/img/perfil_Usuario.png)
-
-**2. Avatar Integrado ao Cabeçalho Global:**
-*Demonstra a aplicação do padrão BFF no carregamento de mídia, onde a miniatura do perfil é renderizada na página de catálogo atestando a conexão do FastAPI com o Object Storage.*
-![Avatar no Cabeçalho](assets/img/meu_perfil_Usuario.png)
-![Atualização de Perfil](assets/img/atualizacao_perfil_Usuario.png)
-
-**Arquitetura final de microsserviços em execução no Portainer:**
-*Consolidação de todas as atividades propostas até o presente momento, com a evidência da criação de todos os containeres utilizados para a execução da atividade proposta no TomFlix.*
-![Arquitetura Final](assets/img/portainer.png)
----
-### Documentação e Relatório Técnico
-O relatório completo detalhando a arquitetura, desafios e implementação desta atividade encontra-se disponível no diretório de documentação:
-* 📄 **[Relatório P1 - Integração Stripe (PDF)](docs/P1_ISW055_Marcio_Silva.pdf)**
----
-
-## 💳 Atividade 7: Integração de Pagamentos com Stripe (Checkout e Webhooks)
-
-Nesta etapa, a plataforma foi monetizada através da integração com o gateway de pagamentos Stripe. O objetivo foi implementar um fluxo completo de assinatura premium, lidando com sessões de checkout externas e webhooks para sincronização de status no banco de dados local.
-
-### Funcionalidades Implementadas
-* **Stripe Checkout:** Criação de sessões dinâmicas de pagamento redirecionando o usuário para o ambiente seguro do Stripe.
-* **Webhooks:** Criação de um endpoint no FastAPI para escutar eventos assíncronos do Stripe e atualizar a flag `is_premium` do usuário no banco de dados MariaDB.
-* **Interface Dinâmica:** Botão de "Desbloquear Premium" no perfil do usuário, com atualização visual no catálogo.
-
-### Evidências Visuais (Atividade 7)
-
-**1. Ambiente de Checkout (Stripe):**
-*Página de pagamento segura hospedada pelo Stripe, integrada ao fluxo do TomFlix.*
-![Serviço Stripe](assets/img/servicoStripe.png)
-
-**2. Tela de Perfil com Opção Premium:**
-*Interface do usuário exibindo a opção de assinatura Premium.*
-![Perfil do Usuário João](assets/img/perfilUsuarioJoao.png)
-
-**3. Atualização no Catálogo/Perfil:**
-*Reflexo visual na interface após as interações do usuário com o sistema.*
-![Meu Perfil Usuário João](assets/img/meuperfilUsuarioJoao.png)
-
----
-
-**Arquitetura final de microsserviços em execução no Portainer:**
-*Consolidação de todas as atividades propostas até o presente momento, com a evidência da criação de todos os containeres utilizados para a execução da atividade proposta no TomFlix.*
-![Arquitetura Final](assets/img/portainer.png)
----
-
-*Desenvolvido por Marcio Hernani - Estudante de Tecnologia em Sistemas Inteligentes*
----
-*Disciplina: Computação em Nuvem - Professor Me. Allan L. R. Siriani* - (@siriani).
+| PEÇA DO PROJETO ATUAL | O QUE VIRA NO SAAS NEXATOPO |
+| :--- | :--- |
+| **Catálogo de filmes (TMDB)** | **Painel Kanban:** Gestão visual de clientes e status dos processos no cartório. |
+| **Microsserviço de login + RBAC** | **Níveis de Acesso:** `admin` (Engenheiro RT) e `usuario` (Técnico de campo). |
+| **Logs e auditoria (Redis)** | **Rastreio:** Log de envios para o cartório e edições em memoriais. |
+| **Upload e perfil (MinIO)** | **Storage Especializado:** Upload de planilhas SIGEF, DWGs pesados e fotos de marcos. |
+| **Plano Premium (Stripe)** | **Liberação Pro:** Desbloqueia a geração ilimitada de croquis e relatórios. |
