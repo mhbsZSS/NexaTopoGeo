@@ -3,84 +3,372 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Perfil - TomFlix</title>
+    <title>Meu Perfil - NexaTopoGeo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; background-color: #141414; color: white; margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background-color: #222; padding: 30px; border-radius: 8px; }
-        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; border-bottom: 1px solid #444; padding-bottom: 20px; }
-        .perfil-info { display: flex; align-items: center; gap: 20px; }
-        .foto-perfil { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #E50914; background-color: #333; }
-        .btn-voltar { background-color: #333; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; }
-        .btn-salvar { background-color: #E50914; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-salvar:hover { background-color: #f40612; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; color: #aaa; }
-        input[type="file"], textarea { width: 100%; padding: 10px; background-color: #333; color: white; border: 1px solid #444; border-radius: 4px; box-sizing: border-box; }
-        .favoritos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
-        .filme-card { background-color: #333; padding: 10px; border-radius: 4px; text-align: center; }
+        :root {
+            --cor-primaria: #2E472D;
+            --cor-primaria-hover: #243823;
+            --cor-primaria-clara: #EAF0EA;
+            --cor-fundo: #F8F9FA;
+            --cor-card: #FFFFFF;
+            --cor-texto: #333333;
+            --cor-texto-suave: #666666;
+            --cor-borda: #E2E8F0;
+            --sombra-card: 0 8px 24px rgba(46, 71, 45, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER */
+        header {
+            background-color: var(--cor-card);
+            border-bottom: 1px solid var(--cor-borda);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--cor-primaria);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .btn-voltar {
+            color: var(--cor-primaria);
+            background: var(--cor-primaria-clara);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-voltar:hover {
+            background-color: #dbe7db;
+        }
+
+        /* CONTEÚDO PRINCIPAL */
+        main {
+            max-width: 800px;
+            width: 100%;
+            margin: 2.5rem auto;
+            padding: 0 1.5rem 3rem;
+        }
+
+        .card {
+            background-color: var(--cor-card);
+            border: 1px solid var(--cor-borda);
+            border-radius: 12px;
+            padding: 2.5rem;
+            box-shadow: var(--sombra-card);
+            margin-bottom: 2rem;
+        }
+
+        .perfil-topo {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--cor-borda);
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .foto-perfil {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--cor-primaria);
+            background-color: var(--cor-fundo);
+        }
+
+        .foto-placeholder {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: var(--cor-primaria-clara);
+            color: var(--cor-primaria);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            border: 3px solid var(--cor-primaria);
+        }
+
+        .perfil-titulos h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--cor-primaria);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .perfil-titulos p {
+            color: var(--cor-texto-suave);
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+        }
+
+        .badge-premium {
+            font-size: 0.8rem;
+            background: #FEFCBF;
+            color: #744210;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-weight: 700;
+            border: 1px solid #FAF089;
+        }
+
+        .badge-role {
+            font-size: 0.8rem;
+            background: var(--cor-primaria-clara);
+            color: var(--cor-primaria);
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        /* PLANO STRIPE SECTION */
+        .plano-box {
+            background-color: #F8FAF8;
+            border: 1px solid #D1E0D1;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .plano-info h3 {
+            font-size: 1.1rem;
+            color: var(--cor-primaria);
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .plano-info p {
+            font-size: 0.875rem;
+            color: var(--cor-texto-suave);
+        }
+
+        .btn-upgrade {
+            background-color: var(--cor-primaria);
+            color: #FFFFFF;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-upgrade:hover {
+            background-color: var(--cor-primaria-hover);
+            transform: translateY(-1px);
+        }
+
+        /* FORMULÁRIO */
+        h2.secao-titulo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--cor-primaria);
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--cor-texto);
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="file"], textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid var(--cor-borda);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            color: var(--cor-texto);
+            background-color: #FAFAFA;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus, input[type="file"]:focus {
+            outline: none;
+            border-color: var(--cor-primaria);
+            background-color: #FFFFFF;
+        }
+
+        .btn-salvar {
+            background-color: var(--cor-primaria);
+            color: #FFFFFF;
+            border: none;
+            padding: 0.85rem 1.75rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-salvar:hover {
+            background-color: var(--cor-primaria-hover);
+        }
+
+        /* Notificação Toast */
+        #notificacao {
+            display: none;
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            min-width: 320px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="perfil-info">
-                <!-- Mostra a URL gerada pelo MinIO ou uma imagem padrão cinza se não tiver -->
+
+    <div id="notificacao"></div>
+
+    <header>
+        <div class="header-container">
+            <a href="/dashboard" class="logo">NexaTopoGeo</a>
+            <a href="/dashboard" class="btn-voltar">← Voltar ao Dashboard</a>
+        </div>
+    </header>
+
+    <main>
+        <div class="card">
+            <!-- CABEÇALHO DO PERFIL -->
+            <div class="perfil-topo">
                 {% if foto_url %}
                     <img src="{{ foto_url }}" alt="Foto de Perfil" class="foto-perfil">
                 {% else %}
-                    <div class="foto-perfil" style="display: flex; align-items: center; justify-content: center; font-size: 40px; color: #555;">👤</div>
+                    <div class="foto-placeholder">{{ usuario.nome[0]|upper if usuario.nome else 'U' }}</div>
                 {% endif %}
-                <div>
-                    <h1 style="margin: 0; color: #E50914;">
+
+                <div class="perfil-titulos">
+                    <h1>
                         {{ usuario.nome }}
                         {% if usuario.is_premium %}
-                            <span style="font-size: 16px; background: gold; color: black; padding: 2px 8px; border-radius: 10px; vertical-align: middle; margin-left: 10px;">🌟 Premium</span>
+                            <span class="badge-premium">🌟 Plano Pro</span>
                         {% endif %}
                     </h1>
-                    <p style="margin: 5px 0 0 0; color: #ccc;">Papel: {{ role }}</p>
-                    
-                    <!-- Botão de Assinatura Stripe (só aparece se NÃO for premium) -->
-                    {% if not usuario.is_premium %}
-                    <form action="/checkout" method="POST" style="margin-top: 15px;">
-                        <button type="submit" style="background-color: #635bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">
-                            Desbloquear Premium (R$ 9,90/mês)
-                        </button>
-                    </form>
-                    {% endif %}
+                    <p>{{ usuario.email }} &bull; <span class="badge-role">{{ role }}</span></p>
                 </div>
             </div>
-            <a href="/" class="btn-voltar">Voltar ao Catálogo</a>
+
+            <!-- CONTROLE DE ASSINATURA STRIPE -->
+            <div class="plano-box">
+                <div class="plano-info">
+                    {% if usuario.is_premium %}
+                        <h3>Assinatura Pro Ativa</h3>
+                        <p>Você tem acesso ilimitado à geração de croquis DXF, memoriais descritivos e storage avançado.</p>
+                    {% else %}
+                        <h3>Plano Free (2 projetos/mês)</h3>
+                        <p>Faça o upgrade para o Plano Pro por R$ 149,90/mês e desbloqueie geração ilimitada de croquis DXF sem marca d'água.</p>
+                    {% endif %}
+                </div>
+
+                {% if not usuario.is_premium %}
+                    <form action="/checkout" method="POST">
+                        <button type="submit" class="btn-upgrade">Assinar Plano Pro</button>
+                    </form>
+                {% endif %}
+            </div>
+
+            <!-- FORMULÁRIO DE EDIÇÃO DE PERFIL -->
+            <h2 class="secao-titulo">Informações e Foto de Perfil</h2>
+            <form action="/perfil/editar" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="foto">Atualizar Foto de Perfil (JPG, PNG - Máx 2MB):</label>
+                    <input type="file" id="foto" name="foto" accept="image/*">
+                </div>
+
+                <div class="form-group">
+                    <label for="bio">Biografia / Especialidade Técnica:</label>
+                    <textarea id="bio" name="bio" rows="4" placeholder="Ex: Engenheiro Agrimensor especialista em Georreferenciamento de Imóveis Rurais (SIGEF/INCRA)...">{{ usuario.bio if usuario.bio else '' }}</textarea>
+                </div>
+
+                <button type="submit" class="btn-salvar">Salvar Alterações</button>
+            </form>
         </div>
+    </main>
 
-        <!-- FORMULÁRIO DE EDIÇÃO DE PERFIL -->
-        <form action="/perfil/editar" method="POST" enctype="multipart/form-data" style="margin-bottom: 40px;">
-            <div class="form-group">
-                <label for="foto">Atualizar Foto de Perfil (Máx 2MB):</label>
-                <input type="file" id="foto" name="foto" accept="image/*">
-            </div>
-            <div class="form-group">
-                <label for="bio">Minha Biografia (Sobre mim):</label>
-                <textarea id="bio" name="bio" rows="4" placeholder="Escreva algo sobre você e os filmes que gosta...">{{ usuario.bio if usuario.bio else '' }}</textarea>
-            </div>
-            <button type="submit" class="btn-salvar">Salvar Alterações</button>
-        </form>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const msg = urlParams.get('msg');
+        const box = document.getElementById('notificacao');
 
-        <!-- LISTA DE FILMES FAVORITOS -->
-        <h2 style="border-bottom: 1px solid #444; padding-bottom: 10px;">Meus Filmes Favoritos</h2>
-        {% if favoritos %}
-            <div class="favoritos-grid">
-                {% for filme in favoritos %}
-                    <div class="filme-card">
-                        {% if filme.poster_path %}
-                            <img src="https://image.tmdb.org/t/p/w200{{ filme.poster_path }}" alt="{{ filme.titulo }}" style="width: 100%; border-radius: 4px;">
-                        {% endif %}
-                        <h4 style="margin: 10px 0 5px 0; font-size: 14px;">{{ filme.titulo }}</h4>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p style="color: #888;">Você ainda não favoritou nenhum filme.</p>
-        {% endif %}
-    </div>
+        if (msg) {
+            box.style.display = 'block';
+
+            if (msg === 'assinatura_cancelada') {
+                box.style.backgroundColor = '#D69E2E';
+                box.style.color = '#000000';
+                box.innerHTML = 'Assinatura não concluída. Você pode tentar novamente a qualquer momento.';
+            } else if (msg === 'erro_stripe') {
+                box.style.backgroundColor = '#C53030';
+                box.style.color = '#FFFFFF';
+                box.innerHTML = 'Falha ao iniciar checkout no Stripe. Tente novamente mais tarde.';
+            }
+
+            setTimeout(() => {
+                box.style.display = 'none';
+            }, 6000);
+        }
+    </script>
 </body>
 </html>

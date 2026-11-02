@@ -5,7 +5,7 @@ from starlette.middleware.sessions import SessionMiddleware
 import os
 import requests 
 from database import get_db_connection, get_db
-from models import Documento
+from models import Documento, Projeto, Cliente, Usuario
 from dxf_service import gerar_croqui_dxf
 from sqlalchemy.orm import Session
 import uuid 
@@ -142,170 +142,46 @@ def sair(request: Request):
     request.session.clear()
     return RedirectResponse(url="/login", status_code=303)
 
-@app.post("/favoritar")
-def favoritar_filme(
-    request: Request,
-    tmdb_movie_id: int = Form(...),
-    titulo: str = Form(...),
-    poster_path: str = Form(...)
-):
+@app.get("/dashboard", response_class=HTMLResponse)
+def exibir_dashboard(request: Request, db: Session = Depends(get_db)):
     usuario_id = request.session.get("usuario_id")
     if not usuario_id:
-        return RedirectResponse(url="/", status_code=303)
+        return RedirectResponse(url="/login", status_code=303)
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    try:
-        # Usamos try/except para ignorar o erro caso ele clique duas vezes.
-        query = """
-            INSERT INTO favoritos (usuario_id, tmdb_movie_id, titulo, poster_path)
-            VALUES (%s, %s, %s, %s)
-        """
-        cursor.execute(query, (usuario_id, tmdb_movie_id, titulo, poster_path))
-        conn.commit()
-        
-        # --- NOVO: Dispara log de auditoria ---
-        disparar_log_auditoria(request, usuario_id, f"favoritou_filme_{tmdb_movie_id}")
-        
-    except Exception:
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    nome_usuario = usuario.nome if usuario else (request.session.get("nome_usuario") or "Usuário")
+    foto_url = f"/avatar/{usuario.avatar_url}" if (usuario and usuario.avatar_url) else None
 
-        conn.rollback()
-    finally:
-        cursor.close()
-        conn.close()
+    # Consulta dos projetos com dados do cliente associado
+    projetos_query = (
+        db.query(Projeto, Cliente.nome_razao.label("cliente_nome"))
+        .join(Cliente, Projeto.cliente_id == Cliente.id)
+        .all()
+    )
 
-    return RedirectResponse(url="/catalogo", status_code=303)
+    # Agrupa projetos nas 5 etapas do Kanban
+    colunas_kanban = ["orcamento", "campo", "desenho", "cartorio", "concluido"]
+    projetos_por_status = {coluna: [] for coluna in colunas_kanban}
 
-@app.post("/comentar")
-def comentar_filme(
-    request: Request,
-    tmdb_movie_id: int = Form(...),
-    texto: str = Form(...)
-):
-    usuario_id = request.session.get("usuario_id")
-    if not usuario_id:
-        return RedirectResponse(url="/", status_code=303)
+    for projeto, cliente_nome in projetos_query:
+        status_key = projeto.status.lower() if projeto.status else "orcamento"
+        if status_key not in projetos_por_status:
+            projetos_por_status[status_key] = []
+        projetos_por_status[status_key].append({
+            "id": projeto.id,
+            "titulo": projeto.titulo,
+            "cliente_nome": cliente_nome,
+            "area_hectares": projeto.area_hectares,
+            "status": status_key,
+            "criado_em": projeto.criado_em.strftime("%d/%m/%Y") if projeto.criado_em else ""
+        })
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    try:
-        query = "INSERT INTO comentarios (usuario_id, tmdb_movie_id, texto) VALUES (%s, %s, %s)"
-        cursor.execute(query, (usuario_id, tmdb_movie_id, texto))
-        conn.commit()
-        
-        # --- NOVO: Dispara log de auditoria ---
-        disparar_log_auditoria(request, usuario_id, f"comentou_no_filme_{tmdb_movie_id}")
-        
-    finally:
-        cursor.close()
-        conn.close()
-
-    return RedirectResponse(url="/catalogo", status_code=303)
-
-@app.post("/apagar-comentario/{comentario_id}")
-def apagar_comentario(request: Request, comentario_id: int):
-    usuario_id = request.session.get("usuario_id")
-    role = request.session.get("role")
-
-    if not usuario_id:
-        return RedirectResponse(url="/", status_code=303)
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    try:
-        # 1. Busca quem é o dono original do comentário no banco
-        cursor.execute("SELECT usuario_id FROM comentarios WHERE id = %s", (comentario_id,))
-        resultado = cursor.fetchone()
-        
-        if not resultado:
-            raise HTTPException(status_code=404, detail="Comentário não encontrado.")
-            
-        dono_id = resultado[0]
-
-        # ==========================================
-        # 2. ENFORCEMENT (RBAC de verdade)
-        # ==========================================
-        # Regra: Se o usuário NÃO for admin E NÃO for o dono do comentário -> Bloqueia com 403
-        if role != "admin" and dono_id != usuario_id:
-            # --- NOVO: Log de Segurança (Tentativa Negada) ---
-            disparar_log_auditoria(request, usuario_id, f"tentativa_negada_403_apagar_comentario_{comentario_id}")
-            
-            raise HTTPException(
-                status_code=403, 
-                detail="Acesso negado: Apenas administradores podem apagar comentários de outros usuários."
-            )
-
-        # 3. Executa a ação caso passe pela barreira
-        cursor.execute("DELETE FROM comentarios WHERE id = %s", (comentario_id,))
-        conn.commit()
-        
-        # --- NOVO: Log de Sucesso ---
-        disparar_log_auditoria(request, usuario_id, f"apagou_comentario_{comentario_id}")
-
-        return RedirectResponse(url="/catalogo", status_code=303)
-    
-    finally:
-        cursor.close()
-        conn.close()
-
-@app.get("/catalogo", response_class=HTMLResponse)
-def exibir_catalogo(request: Request):
-    usuario_id = request.session.get("usuario_id")
-    if not usuario_id:
-        return RedirectResponse(url="/", status_code=303)
-    
-    tmdb_key = os.getenv("TMDB_API_KEY")
-    if not tmdb_key:
-        raise HTTPException(status_code=500, detail="API Key do TMDB ausente no .env")
-
-    url_search = f"https://api.themoviedb.org/3/search/person?query=Tom+Hanks&api_key={tmdb_key}&language=pt-BR"
-    resposta_search = requests.get(url_search).json()
-    person_id = resposta_search["results"][0]["id"]
-    
-    url_movies = f"https://api.themoviedb.org/3/person/{person_id}/movie_credits?api_key={tmdb_key}&language=pt-BR"
-    resposta_movies = requests.get(url_movies).json()
-    filmes = [f for f in resposta_movies.get("cast", []) if f.get("poster_path")]
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    # BUSCA O NOME E O AVATAR DO USUÁRIO PARA O CABEÇALHO
-    cursor.execute("SELECT nome, avatar_url FROM usuarios WHERE id = %s", (usuario_id,))
-    resultado_usuario = cursor.fetchone()
-    
-    nome_usuario = "Usuário"
-    foto_url_header = None
-    
-    if resultado_usuario:
-        nome_usuario = resultado_usuario[0]
-        if resultado_usuario[1]: 
-            foto_url_header = f"/avatar/{resultado_usuario[1]}"
-
-    cursor.execute("SELECT tmdb_movie_id FROM favoritos WHERE usuario_id = %s", (usuario_id,))
-    favoritos_ids = [linha[0] for linha in cursor.fetchall()]
-
-    cursor.execute("SELECT id, tmdb_movie_id, texto, usuario_id FROM comentarios ORDER BY criado_em DESC")
-    comentarios_db = cursor.fetchall()
-    cursor.close()
-    conn.close()
-
-    comentarios_por_filme = {}
-    for cid, movie_id, texto, uid in comentarios_db:
-        if movie_id not in comentarios_por_filme:
-            comentarios_por_filme[movie_id] = []
-        comentarios_por_filme[movie_id].append({"id": cid, "texto": texto, "usuario_id": uid})
-
-    return templates.TemplateResponse(request, "catalogo.html", {
-        "filmes": filmes,
-        "favoritos": favoritos_ids,
-        "comentarios": comentarios_por_filme,
-        "role": request.session.get("role"),
-        "usuario_logado_id": usuario_id,
+    return templates.TemplateResponse(request, "dashboard.html", {
+        "projetos_por_status": projetos_por_status,
         "nome_usuario": nome_usuario,
-        "foto_url": foto_url_header 
+        "foto_url": foto_url,
+        "role": request.session.get("role", "usuario"),
+        "is_premium": usuario.is_premium if usuario else False
     })
 
 @app.get("/auditoria", response_class=HTMLResponse)
@@ -370,31 +246,24 @@ def obter_avatar(nome_arquivo: str):
         raise HTTPException(status_code=404, detail="Avatar não encontrado")
     
 @app.get("/perfil", response_class=HTMLResponse)
-def pagina_perfil(request: Request):
+def pagina_perfil(request: Request, db: Session = Depends(get_db)):
     usuario_id = request.session.get("usuario_id")
     if not usuario_id:
-        return RedirectResponse(url="/", status_code=303)
+        return RedirectResponse(url="/login", status_code=303)
 
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT nome, avatar_url, bio, is_premium FROM usuarios WHERE id = %s", (usuario_id,))
-    usuario = cursor.fetchone()
-
-    cursor.execute("SELECT id, titulo, poster_path FROM favoritos WHERE usuario_id = %s", (usuario_id,))
-    favoritos = cursor.fetchall()
-    cursor.close()
-    conn.close()
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if not usuario:
+        return RedirectResponse(url="/login", status_code=303)
 
     foto_url = None
-    if usuario and usuario.get("avatar_url"):
-        foto_url = f"/avatar/{usuario['avatar_url']}"
+    if usuario.avatar_url:
+        foto_url = f"/avatar/{usuario.avatar_url}"
 
     return templates.TemplateResponse(request, "perfil.html", {
         "usuario": usuario, 
-        "favoritos": favoritos,
         "foto_url": foto_url,
-        "nome_usuario": request.session.get("nome_usuario"),
-        "role": request.session.get("role")
+        "nome_usuario": usuario.nome,
+        "role": request.session.get("role", usuario.role)
     })
 
 @app.post("/perfil/editar")
@@ -702,7 +571,7 @@ def criar_checkout_session(request: Request):
             ],
             mode='subscription',
             # Redireciona de volta após o sucesso ou cancelamento
-            success_url=domain_url + '/catalogo?msg=assinatura_sucesso',
+            success_url=domain_url + '/dashboard?msg=assinatura_sucesso',
             cancel_url=domain_url + '/perfil?msg=assinatura_cancelada',
             # O Pulo do Gato: mandamos o ID do usuário oculto para o Stripe
             client_reference_id=str(usuario_id) 
