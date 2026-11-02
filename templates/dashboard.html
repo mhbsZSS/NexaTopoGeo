@@ -20,6 +20,7 @@
             --cor-borda: #E2E8F0;
             --sombra-card: 0 4px 12px rgba(46, 71, 45, 0.05);
             --sombra-hover: 0 8px 20px rgba(46, 71, 45, 0.12);
+            --sombra-modal: 0 20px 40px rgba(0, 0, 0, 0.2);
         }
 
         * {
@@ -355,6 +356,143 @@
             background: #FAFAFA;
         }
 
+        /* MODAL DE NOVO PROJETO */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-card {
+            background-color: var(--cor-card);
+            border: 1px solid var(--cor-borda);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: var(--sombra-modal);
+            animation: modalFadeIn 0.2s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--cor-borda);
+        }
+
+        .modal-header h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--cor-primaria);
+        }
+
+        .btn-fechar {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--cor-texto-suave);
+            cursor: pointer;
+            line-height: 1;
+            padding: 0.25rem;
+            transition: color 0.2s;
+        }
+
+        .btn-fechar:hover {
+            color: #C53030;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--cor-texto);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid var(--cor-borda);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: var(--cor-texto);
+            background-color: #FAFAFA;
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--cor-primaria);
+            background-color: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(46, 71, 45, 0.15);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 1.75rem;
+        }
+
+        .btn-cancelar {
+            background-color: #EDF2F7;
+            color: var(--cor-texto);
+            border: 1px solid var(--cor-borda);
+            padding: 0.7rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-cancelar:hover {
+            background-color: #E2E8F0;
+        }
+
+        .btn-confirmar {
+            background-color: var(--cor-primaria);
+            color: #FFFFFF;
+            border: none;
+            padding: 0.7rem 1.4rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-confirmar:hover {
+            background-color: var(--cor-primaria-hover);
+        }
+
         /* Notificação Toast */
         #notificacao {
             display: none;
@@ -367,7 +505,7 @@
             font-size: 0.9rem;
             font-weight: 600;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
+            z-index: 2000;
             min-width: 320px;
             text-align: center;
         }
@@ -414,7 +552,7 @@
             <h1>Quadro de Projetos</h1>
             <p>Gerencie o fluxo de trabalho técnico, da medição ao registro em cartório</p>
         </div>
-        <button class="btn-novo-projeto" onclick="alert('Funcionalidade de cadastro rápido de projeto em desenvolvimento.')">
+        <button class="btn-novo-projeto" onclick="abrirModalProjeto()">
             + Novo Projeto
         </button>
     </div>
@@ -556,7 +694,56 @@
         </div>
     </main>
 
+    <!-- MODAL DE CRIAÇÃO DE NOVO PROJETO -->
+    <div id="modal-projeto" class="modal-overlay" onclick="fecharModalSeBackdrop(event)">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>Novo Projeto</h2>
+                <button type="button" class="btn-fechar" onclick="fecharModalProjeto()">&times;</button>
+            </div>
+
+            <form action="/projetos/novo" method="POST">
+                <div class="form-group">
+                    <label for="titulo">Nome do Projeto (Título)</label>
+                    <input type="text" id="titulo" name="titulo" placeholder="Ex: Georreferenciamento Fazenda Santa Maria" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="cliente_nome">Nome do Cliente / Razão Social</label>
+                    <input type="text" id="cliente_nome" name="cliente_nome" placeholder="Ex: Agropecuária São José Ltda" required>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancelar" onclick="fecharModalProjeto()">Cancelar</button>
+                    <button type="submit" class="btn-confirmar">Criar Projeto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        function abrirModalProjeto() {
+            document.getElementById('modal-projeto').style.display = 'flex';
+            document.getElementById('titulo').focus();
+        }
+
+        function fecharModalProjeto() {
+            document.getElementById('modal-projeto').style.display = 'none';
+        }
+
+        function fecharModalSeBackdrop(event) {
+            if (event.target.id === 'modal-projeto') {
+                fecharModalProjeto();
+            }
+        }
+
+        // Fechar modal ao pressionar ESC
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                fecharModalProjeto();
+            }
+        });
+
         const urlParams = new URLSearchParams(window.location.search);
         const msg = urlParams.get('msg');
         const box = document.getElementById('notificacao');
@@ -564,7 +751,11 @@
         if (msg) {
             box.style.display = 'block';
 
-            if (msg === 'assinatura_sucesso') {
+            if (msg === 'projeto_criado') {
+                box.style.backgroundColor = '#2E472D';
+                box.style.color = '#FFFFFF';
+                box.innerHTML = '✅ Projeto criado com sucesso!';
+            } else if (msg === 'assinatura_sucesso') {
                 box.style.backgroundColor = '#2E472D';
                 box.style.color = '#FFFFFF';
                 box.innerHTML = '🎉 Assinatura Pro ativada com sucesso! Aproveite todos os recursos ilimitados.';
@@ -577,4 +768,3 @@
     </script>
 </body>
 </html>
-

@@ -355,7 +355,11 @@
         if (msg) {
             box.style.display = 'block';
 
-            if (msg === 'assinatura_cancelada') {
+            if (msg === 'limite_atingido') {
+                box.style.backgroundColor = '#C53030';
+                box.style.color = '#FFFFFF';
+                box.innerHTML = '⚠️ Limite do Plano Free atingido (máx. 2 projetos). Assine o Plano Pro para criar projetos ilimitados.';
+            } else if (msg === 'assinatura_cancelada') {
                 box.style.backgroundColor = '#D69E2E';
                 box.style.color = '#000000';
                 box.innerHTML = 'Assinatura não concluída. Você pode tentar novamente a qualquer momento.';

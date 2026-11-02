@@ -184,6 +184,64 @@ def exibir_dashboard(request: Request, db: Session = Depends(get_db)):
         "is_premium": usuario.is_premium if usuario else False
     })
 
+
+# ==========================================
+# ROTA DE CRIAÇÃO DE PROJETOS (ISSUE #5)
+# ==========================================
+@app.post("/projetos/novo")
+def criar_novo_projeto(
+    request: Request,
+    titulo: str = Form(...),
+    cliente_nome: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    usuario_id = request.session.get("usuario_id")
+    if not usuario_id:
+        return RedirectResponse(url="/login", status_code=303)
+
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if not usuario:
+        return RedirectResponse(url="/login", status_code=303)
+
+    # 1. Trava Freemium (Business Logic)
+    qtd_projetos = db.query(Projeto).filter(Projeto.usuario_id_tecnico == usuario_id).count()
+
+    # Se não for assinante Pro e já atingiu o limite de 2 projetos
+    if not usuario.is_premium and qtd_projetos >= 2:
+        return RedirectResponse(url="/perfil?msg=limite_atingido", status_code=303)
+
+    # 2. Criação do Cliente e Projeto
+    cliente = (
+        db.query(Cliente)
+        .filter(Cliente.usuario_id == usuario_id, Cliente.nome_razao == cliente_nome)
+        .first()
+    )
+
+    if not cliente:
+        cliente = Cliente(
+            usuario_id=usuario_id,
+            nome_razao=cliente_nome,
+            cpf_cnpj=f"TEMP-{uuid.uuid4().hex[:12]}",
+            telefone=""
+        )
+        db.add(cliente)
+        db.commit()
+        db.refresh(cliente)
+
+    novo_projeto = Projeto(
+        cliente_id=cliente.id,
+        usuario_id_tecnico=usuario_id,
+        titulo=titulo,
+        status="orcamento"
+    )
+    db.add(novo_projeto)
+    db.commit()
+    db.refresh(novo_projeto)
+
+    disparar_log_auditoria(request, usuario_id, f"criou_projeto_{novo_projeto.id}")
+
+    return RedirectResponse(url="/dashboard?msg=projeto_criado", status_code=303)
+
 @app.get("/auditoria", response_class=HTMLResponse)
 def painel_auditoria(request: Request):
     usuario_id = request.session.get("usuario_id")
