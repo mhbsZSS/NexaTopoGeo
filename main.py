@@ -1,10 +1,12 @@
-from fastapi import FastAPI, Request, Form, HTTPException, File, UploadFile
+from fastapi import FastAPI, Request, Form, HTTPException, File, UploadFile, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 import os
 import requests 
-from database import get_db_connection
+from database import get_db_connection, get_db
+from models import Documento
+from sqlalchemy.orm import Session
 import uuid 
 from datetime import timedelta 
 from minio import Minio
@@ -18,7 +20,7 @@ import stripe
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "admin_tomflix")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "SenhaForte123!")
-MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME", "perfis-tomflix")
+MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME", "documentos-nexatopo")
 
 # Inicializa o cliente do MinIO
 minio_client = Minio(
@@ -36,7 +38,7 @@ try:
 except S3Error as e:
     print(f"Erro ao conectar com o MinIO: {e}")
 
-app = FastAPI(title="TomFlix App")
+app = FastAPI(title="NexaTopoGeo App")
 
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY"))
 templates = Jinja2Templates(directory="templates")
@@ -440,6 +442,133 @@ async def editar_perfil(
     conn.close()
 
     return RedirectResponse(url="/perfil", status_code=303)
+
+
+# ==========================================
+# ROTAS DE UPLOAD DE DOCUMENTOS (ISSUE #2)
+# ==========================================
+MAPA_EXTENSOES_DOCUMENTOS = {
+    ".csv": "sigef_csv",
+    ".xlsx": "sigef_xlsx",
+    ".dwg": "croqui_dwg",
+    ".dxf": "croqui_dxf",
+    ".pdf": "memorial_pdf",
+}
+
+async def processar_upload_documento(
+    projeto_id: int,
+    request: Request,
+    file: UploadFile,
+    db: Session
+):
+    # 4. SEGURANÇA: Autenticação e RBAC (técnico ou admin)
+    usuario_id = request.session.get("usuario_id")
+    role = request.session.get("role")
+
+    # Suporte a JWT via header Authorization (Bearer Token)
+    if not usuario_id and "authorization" in request.headers:
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+            try:
+                from jose import jwt
+                payload = jwt.decode(token, os.getenv("SECRET_KEY", ""), algorithms=["HS256"])
+                usuario_id = payload.get("usuario_id") or payload.get("sub")
+                role = payload.get("role")
+            except Exception:
+                pass
+
+    if not usuario_id:
+        raise HTTPException(status_code=401, detail="Não autorizado")
+
+    if role not in ["admin", "tecnico", "usuario"]:
+        raise HTTPException(
+            status_code=403, 
+            detail="Acesso negado: apenas técnicos ou administradores podem fazer upload de documentos."
+        )
+
+    # 2. VALIDAÇÃO DE EXTENSÕES
+    if not file or not file.filename:
+        raise HTTPException(status_code=400, detail="Arquivo não fornecido.")
+
+    _, ext = os.path.splitext(file.filename)
+    ext = ext.lower()
+
+    if ext not in MAPA_EXTENSOES_DOCUMENTOS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Extensão '{ext}' não permitida. Apenas {', '.join(MAPA_EXTENSOES_DOCUMENTOS.keys())} são aceitas."
+        )
+
+    tipo = MAPA_EXTENSOES_DOCUMENTOS[ext]
+
+    file.file.seek(0, 2)
+    tamanho = file.file.tell()
+    file.file.seek(0)
+
+    minio_object_name = f"projeto_{projeto_id}_{uuid.uuid4().hex}{ext}"
+
+    # 1. UPLOAD NO MINIO
+    try:
+        minio_client.put_object(
+            MINIO_BUCKET_NAME,
+            minio_object_name,
+            file.file,
+            length=tamanho,
+            content_type=file.content_type or "application/octet-stream"
+        )
+    except S3Error as e:
+        print(f"Erro no upload do MinIO: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao salvar o documento no servidor de storage.")
+
+    # 3. REGISTRO NO BANCO DE DADOS
+    documento = Documento(
+        projeto_id=projeto_id,
+        nome_arquivo=file.filename,
+        minio_object_name=minio_object_name,
+        tipo=tipo
+    )
+    db.add(documento)
+    db.commit()
+    db.refresh(documento)
+
+    disparar_log_auditoria(request, usuario_id, f"upload_documento_{documento.id}_projeto_{projeto_id}")
+
+    return {
+        "status": "sucesso",
+        "mensagem": "Upload realizado com sucesso",
+        "documento": {
+            "id": documento.id,
+            "projeto_id": documento.projeto_id,
+            "nome_arquivo": documento.nome_arquivo,
+            "minio_object_name": documento.minio_object_name,
+            "tipo": documento.tipo,
+            "upload_em": documento.upload_em.isoformat() if documento.upload_em else None
+        }
+    }
+
+
+@app.post("/projetos/{projeto_id}/upload")
+async def upload_documento_projeto(
+    projeto_id: int,
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """Upload de documento via path parameter (ex: /projetos/1/upload)."""
+    return await processar_upload_documento(projeto_id, request, file, db)
+
+
+@app.post("/documentos/upload")
+async def upload_documento_form(
+    request: Request,
+    projeto_id: int = Form(...),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """Upload de documento via multipart/form-data."""
+    return await processar_upload_documento(projeto_id, request, file, db)
+
 
 # ==========================================
 # ROTAS DE ASSINATURA (STRIPE) - ATIVIDADE 7

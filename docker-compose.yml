@@ -3,20 +3,20 @@ version: '3.8'
 services:
   db:
     image: mariadb:latest
-    container_name: tomflix_db
+    container_name: nexatopo_db
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: tomflix_db
+      MYSQL_DATABASE: nexatopo_db
     volumes:
       - db_data_m:/var/lib/mysql
 
   redis:
     image: redis:alpine
-    container_name: tomflix_redis
+    container_name: nexatopo_redis
 
   log-service:
     build: ./log_service
-    container_name: tomflix_log_service
+    container_name: nexatopo_log_service
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -25,8 +25,7 @@ services:
 
   minio:
     image: ghcr.io/coollabsio/minio:latest
-    container_name: tomflix_minio
-    # BLOCO DE PORTAS REMOVIDO: O MinIO agora roda de forma 100% privada
+    container_name: nexatopo_minio
     environment:
       - MINIO_ROOT_USER=${MINIO_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_PASSWORD}
@@ -36,12 +35,12 @@ services:
 
   auth-service:
     build: ./auth_service
-    container_name: tomflix_auth_service
+    container_name: nexatopo_auth_service
     environment:
       - DB_HOST=db
       - DB_USER=root
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=tomflix_db
+      - DB_NAME=nexatopo_db
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
       - SMTP_FROM=${SMTP_FROM}
@@ -52,7 +51,7 @@ services:
 
   app:
     build: .
-    container_name: tomflix_app
+    container_name: nexatopo_app
     ports:
       - "8221:8000" 
     environment:
@@ -63,13 +62,13 @@ services:
       - DB_HOST=db
       - DB_USER=root
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=tomflix_db
+      - DB_NAME=nexatopo_db
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
       - MINIO_ENDPOINT=minio:9000 
       - MINIO_ACCESS_KEY=${MINIO_USER}
       - MINIO_SECRET_KEY=${MINIO_PASSWORD}
-      - MINIO_BUCKET_NAME=perfis-tomflix
+      - MINIO_BUCKET_NAME=documentos-nexatopo
       - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_PRICE_ID=${STRIPE_PRICE_ID}
