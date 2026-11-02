@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexaTopoGeo - Automação para Topografia e Agrimensura</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cor-primaria: #2E472D;
+            --cor-primaria-hover: #243823;
+            --cor-primaria-clara: #EAF0EA;
+            --cor-fundo: #F8F9FA;
+            --cor-card: #FFFFFF;
+            --cor-texto: #333333;
+            --cor-texto-suave: #666666;
+            --cor-borda: #E2E8F0;
+            --sombra-suave: 0 4px 20px rgba(0, 0, 0, 0.05);
+            --sombra-card: 0 10px 25px rgba(46, 71, 45, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER */
+        header {
+            background-color: var(--cor-card);
+            border-bottom: 1px solid var(--cor-borda);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--cor-primaria);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-tag {
+            font-size: 0.75rem;
+            background: var(--cor-primaria-clara);
+            color: var(--cor-primaria);
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-link {
+            color: var(--cor-texto);
+            background: transparent;
+        }
+
+        .btn-link:hover {
+            color: var(--cor-primaria);
+        }
+
+        .btn-primary {
+            background-color: var(--cor-primaria);
+            color: #FFFFFF;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--cor-primaria-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: #FFFFFF;
+            color: var(--cor-primaria);
+            border: 1px solid var(--cor-borda);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--cor-fundo);
+            border-color: var(--cor-primaria);
+        }
+
+        /* HERO SECTION */
+        .hero {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 5rem 2rem 4rem;
+            text-align: center;
+        }
+
+        .badge-hero {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--cor-primaria-clara);
+            color: var(--cor-primaria);
+            padding: 0.4rem 1rem;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1.75rem;
+        }
+
+        .hero h1 {
+            font-size: 3.25rem;
+            font-weight: 800;
+            color: var(--cor-primaria);
+            line-height: 1.15;
+            letter-spacing: -1px;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero p.subtitle {
+            font-size: 1.25rem;
+            color: var(--cor-texto-suave);
+            max-width: 680px;
+            margin: 0 auto 2.5rem;
+        }
+
+        .hero-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 4rem;
+        }
+
+        .hero-actions .btn {
+            padding: 0.9rem 2rem;
+            font-size: 1.05rem;
+        }
+
+        /* FEATURES SECTION */
+        .features {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem 2rem 6rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--cor-card);
+            border: 1px solid var(--cor-borda);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--sombra-suave);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--sombra-card);
+            border-color: var(--cor-primaria);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: var(--cor-primaria-clara);
+            color: var(--cor-primaria);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--cor-primaria);
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-card p {
+            color: var(--cor-texto-suave);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* FOOTER */
+        footer {
+            margin-top: auto;
+            background-color: var(--cor-card);
+            border-top: 1px solid var(--cor-borda);
+            padding: 2rem;
+            text-align: center;
+            color: var(--cor-texto-suave);
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.25rem;
+            }
+            .hero p.subtitle {
+                font-size: 1.1rem;
+            }
+            .nav-container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CABEÇALHO -->
+    <header>
+        <div class="nav-container">
+            <a href="/" class="logo">
+                NexaTopoGeo
+                <span class="logo-tag">B2B</span>
+            </a>
+            <div class="nav-links">
+                <a href="/login" class="btn btn-link">Entrar</a>
+                <a href="/cadastrar" class="btn btn-primary">Começar Agora</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <main class="hero">
+        <div class="badge-hero">
+            ⚡ Automação de Engenharia Topográfica
+        </div>
+
+        <h1>Automatize seus Memoriais e Croquis</h1>
+
+        <p class="subtitle">
+            Plataforma B2B para agrimensores e topógrafos. Elimine o retrabalho no AutoCAD e Word, gerando peças técnicas e croquis DXF em minutos.
+        </p>
+
+        <div class="hero-actions">
+            <a href="/cadastrar" class="btn btn-primary">Começar Agora</a>
+            <a href="/login" class="btn btn-secondary">Entrar na Plataforma</a>
+        </div>
+    </main>
+
+    <!-- RECURSOS EM DESTAQUE -->
+    <section class="features">
+        <div class="feature-card">
+            <div class="feature-icon">📐</div>
+            <h3>Croquis DXF Automatizados</h3>
+            <p>Motor Python/ezdxf que constrói polígonos fechados e vértices com identificadores prontos para AutoCAD e QGIS.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📑</div>
+            <h3>Importação SIGEF e CSV</h3>
+            <p>Carregue coordenadas georreferenciadas diretamente de planilhas e converta em documentação técnica padronizada.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">☁️</div>
+            <h3>Storage Especializado (MinIO)</h3>
+            <p>Armazene com segurança arquivos pesados DWG, DXF, RINEX e fotos de marcos geodésicos sem perder dados.</p>
+        </div>
+    </section>
+
+    <!-- RODAPÉ -->
+    <footer>
+        <p>&copy; 2026 NexaTopoGeo. Soluções inteligentes para agrimensura e engenharia.</p>
+    </footer>
+
+</body>
+</html>
+

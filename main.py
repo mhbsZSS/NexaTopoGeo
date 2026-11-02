@@ -66,21 +66,33 @@ def disparar_log_auditoria(request: Request, usuario_id: int, acao: str):
         print(f"Aviso: Falha ao enviar log para auditoria - {e}")
 
 @app.get("/", response_class=HTMLResponse)
+def landing_page(request: Request):
+    if request.session.get("usuario_id"):
+        return RedirectResponse(url="/catalogo", status_code=303)
+    return templates.TemplateResponse(request=request, name="landing.html")
+
+@app.get("/login", response_class=HTMLResponse)
 def tela_login(request: Request):
     if request.session.get("usuario_id"):
         return RedirectResponse(url="/catalogo", status_code=303)
     return templates.TemplateResponse(request=request, name="login.html")
+
+@app.get("/cadastrar", response_class=HTMLResponse)
+def tela_cadastro(request: Request):
+    if request.session.get("usuario_id"):
+        return RedirectResponse(url="/catalogo", status_code=303)
+    return templates.TemplateResponse(request=request, name="cadastro.html")
 
 @app.post("/cadastrar")
 def cadastrar_usuario(request: Request, nome: str = Form(...), email: str = Form(...), senha: str = Form(...)):
     try:
         resposta = requests.post(f"{AUTH_URL}/cadastrar", data={"nome": nome, "email": email, "senha": senha}, timeout=10)
         if resposta.status_code == 200:
-            return RedirectResponse(url="/?msg=cadastro_sucesso", status_code=303)
-        # O Pulo do Gato: Redireciona com mensagem de erro em vez de tela preta
-        return RedirectResponse(url="/?msg=erro_cadastro", status_code=303)
+            return RedirectResponse(url="/login?msg=cadastro_sucesso", status_code=303)
+        # Redireciona de volta para cadastro em caso de erro
+        return RedirectResponse(url="/cadastrar?msg=erro_cadastro", status_code=303)
     except requests.exceptions.RequestException:
-        return RedirectResponse(url="/?msg=erro_offline", status_code=303)
+        return RedirectResponse(url="/cadastrar?msg=erro_offline", status_code=303)
 
 @app.post("/login")
 def realizar_login(request: Request, email: str = Form(...), senha: str = Form(...)):
@@ -91,18 +103,18 @@ def realizar_login(request: Request, email: str = Form(...), senha: str = Form(.
             request.session["usuario_id"] = dados["usuario_id"]
             request.session["role"] = dados["role"] 
             return RedirectResponse(url="/catalogo", status_code=303)
-        # Redireciona em caso de credencial inválida
-        return RedirectResponse(url="/?msg=erro_login", status_code=303)
+        # Redireciona em caso de credencial inválida para a tela de login
+        return RedirectResponse(url="/login?msg=erro_login", status_code=303)
     except requests.exceptions.RequestException:
-        return RedirectResponse(url="/?msg=erro_offline", status_code=303)
+        return RedirectResponse(url="/login?msg=erro_offline", status_code=303)
 
 @app.post("/esqueci-senha")
 def esqueci_senha(request: Request, email: str = Form(...)):
     try:
         requests.post(f"{AUTH_URL}/esqueci-senha", data={"email": email}, timeout=10)
-        return RedirectResponse(url="/?msg=email_enviado", status_code=303)
+        return RedirectResponse(url="/login?msg=email_enviado", status_code=303)
     except requests.exceptions.RequestException:
-        return RedirectResponse(url="/?msg=erro_offline", status_code=303)
+        return RedirectResponse(url="/login?msg=erro_offline", status_code=303)
     
 @app.get("/nova-senha", response_class=HTMLResponse)
 def tela_nova_senha(request: Request, token: str):
@@ -113,11 +125,11 @@ def resetar_senha(request: Request, token: str = Form(...), nova_senha: str = Fo
     try:
         resposta = requests.post(f"{AUTH_URL}/resetar-senha", data={"token": token, "nova_senha": nova_senha}, timeout=10)
         if resposta.status_code == 200:
-            return RedirectResponse(url="/?msg=senha_alterada", status_code=303)
+            return RedirectResponse(url="/login?msg=senha_alterada", status_code=303)
         # Captura o token inválido/expirado e devolve para o início
-        return RedirectResponse(url="/?msg=token_invalido", status_code=303)
+        return RedirectResponse(url="/login?msg=token_invalido", status_code=303)
     except requests.exceptions.RequestException:
-        return RedirectResponse(url="/?msg=erro_offline", status_code=303)
+        return RedirectResponse(url="/login?msg=erro_offline", status_code=303)
             
 @app.get("/logout")
 def sair(request: Request):
@@ -128,7 +140,7 @@ def sair(request: Request):
         disparar_log_auditoria(request, usuario_id, "logout")
         
     request.session.clear()
-    return RedirectResponse(url="/", status_code=303)
+    return RedirectResponse(url="/login", status_code=303)
 
 @app.post("/favoritar")
 def favoritar_filme(

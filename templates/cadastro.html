@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - NexaTopoGeo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cor-primaria: #2E472D;
+            --cor-primaria-hover: #243823;
+            --cor-primaria-clara: #EAF0EA;
+            --cor-fundo: #F8F9FA;
+            --cor-card: #FFFFFF;
+            --cor-texto: #333333;
+            --cor-texto-suave: #666666;
+            --cor-borda: #E2E8F0;
+            --sombra-card: 0 10px 30px rgba(46, 71, 45, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        .cadastro-wrapper {
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .brand-header a {
+            text-decoration: none;
+            color: var(--cor-primaria);
+            font-size: 1.85rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-header p {
+            color: var(--cor-texto-suave);
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+        }
+
+        .card {
+            background: var(--cor-card);
+            border: 1px solid var(--cor-borda);
+            border-radius: 12px;
+            padding: 2.5rem;
+            box-shadow: var(--sombra-card);
+        }
+
+        .card h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--cor-primaria);
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .card p.subtitle {
+            font-size: 0.9rem;
+            color: var(--cor-texto-suave);
+            text-align: center;
+            margin-bottom: 1.75rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--cor-texto);
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1.5px solid var(--cor-borda);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: var(--cor-texto);
+            background-color: #FAFAFA;
+            transition: all 0.2s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--cor-primaria);
+            background-color: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(46, 71, 45, 0.15);
+        }
+
+        button.btn-primary {
+            width: 100%;
+            padding: 0.85rem;
+            background-color: var(--cor-primaria);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        button.btn-primary:hover {
+            background-color: var(--cor-primaria-hover);
+            transform: translateY(-1px);
+        }
+
+        .divider {
+            height: 1px;
+            background-color: var(--cor-borda);
+            margin: 1.75rem 0;
+        }
+
+        .card-footer {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--cor-texto-suave);
+        }
+
+        .card-footer a {
+            color: var(--cor-primaria);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .card-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Notificação Toast */
+        #notificacao {
+            display: none;
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            min-width: 320px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="notificacao"></div>
+
+    <div class="cadastro-wrapper">
+        <div class="brand-header">
+            <a href="/">NexaTopoGeo</a>
+            <p>Plataforma para Topografia e Agrimensura</p>
+        </div>
+
+        <div class="card">
+            <h2>Criar Conta</h2>
+            <p class="subtitle">Cadastre seu escritório e comece a automatizar</p>
+
+            <form action="/cadastrar" method="POST">
+                <div class="form-group">
+                    <label for="nome">Nome Completo ou Razão Social</label>
+                    <input type="text" id="nome" name="nome" placeholder="Ex: Eng. Carlos Silva" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">E-mail Profissional</label>
+                    <input type="email" id="email" name="email" placeholder="carlos@escritorio.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="senha">Senha</label>
+                    <input type="password" id="senha" name="senha" placeholder="Crie uma senha segura" required>
+                </div>
+
+                <button type="submit" class="btn-primary">Criar Conta</button>
+            </form>
+
+            <div class="divider"></div>
+
+            <div class="card-footer">
+                Já possui uma conta? <a href="/login">Faça Login</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const msg = urlParams.get('msg');
+        const box = document.getElementById('notificacao');
+
+        if (msg) {
+            box.style.display = 'block';
+
+            if (msg === 'erro_cadastro') {
+                box.style.backgroundColor = '#C53030';
+                box.style.color = '#FFFFFF';
+                box.innerHTML = 'Erro no cadastro. O e-mail informado já pode estar em uso.';
+            } else if (msg === 'erro_offline') {
+                box.style.backgroundColor = '#D69E2E';
+                box.style.color = '#000000';
+                box.innerHTML = 'Serviço de autenticação temporariamente indisponível.';
+            }
+
+            setTimeout(() => {
+                box.style.display = 'none';
+            }, 6000);
+        }
+    </script>
+</body>
+</html>
+
