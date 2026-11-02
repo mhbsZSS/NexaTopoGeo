@@ -3,85 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TomFlix - Redefinir Senha</title>
+    <title>Redefinir Senha - NexaTopoGeo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #141414;
-            color: #ffffff;
+        :root {
+            --cor-primaria: #2E472D;
+            --cor-primaria-hover: #243823;
+            --cor-primaria-clara: #EAF0EA;
+            --cor-fundo: #F8F9FA;
+            --cor-card: #FFFFFF;
+            --cor-texto: #333333;
+            --cor-texto-suave: #666666;
+            --cor-borda: #E2E8F0;
+            --sombra-card: 0 10px 30px rgba(46, 71, 45, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            min-height: 100vh;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            padding: 2rem 1rem;
         }
-        .container {
-            display: flex;
-            background: #222;
-            padding: 40px;
+
+        .redefinir-wrapper {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .brand-header a {
+            text-decoration: none;
+            color: var(--cor-primaria);
+            font-size: 1.85rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-header p {
+            color: var(--cor-texto-suave);
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+        }
+
+        .card {
+            background: var(--cor-card);
+            border: 1px solid var(--cor-borda);
             border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            justify-content: center;
+            padding: 2.5rem;
+            box-shadow: var(--sombra-card);
         }
-        .form-section {
-            width: 300px;
+
+        .card h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--cor-primaria);
+            margin-bottom: 0.5rem;
+            text-align: center;
         }
-        h2 {
-            margin-top: 0;
-            font-size: 1.5rem;
-            border-bottom: 2px solid #E50914;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        p {
+
+        .card p.subtitle {
             font-size: 0.9rem;
-            color: #ccc;
-            margin-bottom: 20px;
+            color: var(--cor-texto-suave);
+            text-align: center;
+            margin-bottom: 1.75rem;
         }
-        input {
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--cor-texto);
+        }
+
+        input[type="password"] {
             width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            background: #333;
-            border: 1px solid #444;
-            color: white;
-            border-radius: 6px;
-            box-sizing: border-box;
-            transition: border-color 0.3s;
+            padding: 0.8rem 1rem;
+            border: 1.5px solid var(--cor-borda);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: var(--cor-texto);
+            background-color: #FAFAFA;
+            transition: all 0.2s ease;
         }
-        input:focus {
+
+        input[type="password"]:focus {
             outline: none;
-            border-color: #E50914;
+            border-color: var(--cor-primaria);
+            background-color: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(46, 71, 45, 0.15);
         }
-        button {
+
+        button.btn-primary {
             width: 100%;
-            padding: 12px;
-            background-color: #E50914;
-            color: white;
+            padding: 0.85rem;
+            background-color: var(--cor-primaria);
+            color: #FFFFFF;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 1rem;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.2s ease;
         }
-        button:hover {
-            background-color: #f6121d;
+
+        button.btn-primary:hover {
+            background-color: var(--cor-primaria-hover);
+            transform: translateY(-1px);
+        }
+
+        .divider {
+            height: 1px;
+            background-color: var(--cor-borda);
+            margin: 1.75rem 0;
+        }
+
+        .card-footer {
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .card-footer a {
+            color: var(--cor-primaria);
+            font-weight: 600;
+            text-decoration: none;
+            transition: text-decoration 0.2s;
+        }
+
+        .card-footer a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="form-section">
-            <h2>Criar Nova Senha</h2>
-            <p>Digite sua nova senha de acesso abaixo.</p>
-            
+
+    <div class="redefinir-wrapper">
+        <div class="brand-header">
+            <a href="/">NexaTopoGeo</a>
+            <p>Plataforma para Topografia e Agrimensura</p>
+        </div>
+
+        <div class="card">
+            <h2>Redefinir Senha</h2>
+            <p class="subtitle">Crie uma nova senha segura para o seu acesso.</p>
+
             <form action="/resetar-senha" method="POST">
+                <!-- Token criptográfico temporal injetado pelo Jinja2 -->
                 <input type="hidden" name="token" value="{{ token }}">
-                <input type="password" name="nova_senha" placeholder="Sua nova senha" required>
-                <button type="submit">Salvar nova senha</button>
+
+                <div class="form-group">
+                    <label for="nova_senha">Nova Senha</label>
+                    <input type="password" id="nova_senha" name="nova_senha" placeholder="Digite sua nova senha" required minlength="6">
+                </div>
+
+                <button type="submit" class="btn-primary">Salvar Nova Senha</button>
             </form>
+
+            <div class="divider"></div>
+
+            <div class="card-footer">
+                <a href="/login">← Voltar para o Login</a>
+            </div>
         </div>
     </div>
+
 </body>
 </html>

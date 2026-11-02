@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ projeto.titulo }} - NexaTopoGeo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cor-primaria: #2E472D;
+            --cor-primaria-hover: #243823;
+            --cor-primaria-clara: #EAF0EA;
+            --cor-fundo: #F8F9FA;
+            --cor-card: #FFFFFF;
+            --cor-texto: #333333;
+            --cor-texto-suave: #666666;
+            --cor-borda: #E2E8F0;
+            --cor-sucesso: #2E7D32;
+            --cor-aviso: #D97706;
+            --sombra-card: 0 4px 16px rgba(46, 71, 45, 0.06);
+            --sombra-hover: 0 8px 24px rgba(46, 71, 45, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER */
+        header {
+            background-color: var(--cor-card);
+            border-bottom: 1px solid var(--cor-borda);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--cor-primaria);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .badge-tag {
+            font-size: 0.75rem;
+            background: var(--cor-primaria-clara);
+            color: var(--cor-primaria);
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .btn-link {
+            text-decoration: none;
+            color: var(--cor-texto-suave);
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: color 0.2s;
+        }
+
+        .btn-link:hover {
+            color: var(--cor-primaria);
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.75rem;
+            background: var(--cor-fundo);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* MAIN LAYOUT */
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+
+        /* BREADCRUMB */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--cor-texto-suave);
+        }
+
+        .breadcrumb a {
+            color: var(--cor-primaria);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* CABEÇALHO DO PROJETO */
+        .project-hero {
+            background: var(--cor-card);
+            border: 1px solid var(--cor-borda);
+            border-radius: 12px;
+            padding: 1.75rem 2rem;
+            box-shadow: var(--sombra-card);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .project-hero-info h1 {
+            font-size: 1.65rem;
+            font-weight: 800;
+            color: var(--cor-primaria);
+            margin-bottom: 0.35rem;
+        }
+
+        .project-meta {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            color: var(--cor-texto-suave);
+            font-size: 0.95rem;
+            flex-wrap: wrap;
+        }
+
+        .project-meta strong {
+            color: var(--cor-texto);
+        }
+
+        .phase-badge {
+            display: inline-block;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            background: var(--cor-primaria-clara);
+            color: var(--cor-primaria);
+        }
+
+        /* FORM ATUALIZAR FASE */
+        .status-form {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--cor-fundo);
+            padding: 0.6rem 0.85rem;
+            border-radius: 10px;
+            border: 1px solid var(--cor-borda);
+        }
+
+        .status-form label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--cor-texto-suave);
+        }
+
+        .form-select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--cor-borda);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background-color: #FFFFFF;
+            color: var(--cor-texto);
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            border-color: var(--cor-primaria);
+        }
+
+        .btn {
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-primary {
+            background-color: var(--cor-primaria);
+            color: #FFFFFF;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--cor-primaria-hover);
+        }
+
+        .btn-secondary {
+            background-color: #FFFFFF;
+            color: var(--cor-primaria);
+            border: 1px solid var(--cor-primaria);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--cor-primaria-clara);
+        }
+
+        /* GRID SEÇÃO DE UPLOAD E DOCUMENTOS */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .workspace-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel-card {
+            background: var(--cor-card);
+            border: 1px solid var(--cor-borda);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--sombra-card);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--cor-primaria);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--cor-borda);
+            padding-bottom: 0.75rem;
+        }
+
+        /* FORM DE UPLOAD */
+        .upload-form-box {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .file-dropzone {
+            border: 2px dashed var(--cor-borda);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            background-color: #FAFAFA;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .file-dropzone:hover {
+            border-color: var(--cor-primaria);
+        }
+
+        .file-dropzone input[type="file"] {
+            display: block;
+            width: 100%;
+            font-size: 0.85rem;
+            color: var(--cor-texto-suave);
+            margin: 0 auto;
+        }
+
+        .file-hints {
+            font-size: 0.75rem;
+            color: var(--cor-texto-suave);
+            margin-top: 0.5rem;
+        }
+
+        /* LISTA DE DOCUMENTOS */
+        .doc-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .doc-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.65rem 0.85rem;
+            background: var(--cor-fundo);
+            border: 1px solid var(--cor-borda);
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .doc-info {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            overflow: hidden;
+        }
+
+        .doc-name {
+            font-weight: 600;
+            color: var(--cor-texto);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 240px;
+        }
+
+        .doc-badge {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: #E2E8F0;
+            color: #475569;
+        }
+
+        .doc-badge.csv { background: #DCFCE7; color: #166534; }
+        .doc-badge.dxf { background: #E0E7FF; color: #3730A3; }
+        .doc-badge.pdf { background: #FEE2E2; color: #991B1B; }
+
+        .doc-date {
+            font-size: 0.75rem;
+            color: var(--cor-texto-suave);
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--cor-texto-suave);
+            font-size: 0.9rem;
+            background: var(--cor-fundo);
+            border-radius: 8px;
+            border: 1px dashed var(--cor-borda);
+        }
+
+        /* SEÇÃO TABELA SIGEF & AÇÕES RÁPIDAS */
+        .sigef-section {
+            background: var(--cor-card);
+            border: 1px solid var(--cor-borda);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--sombra-card);
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .sigef-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            border-bottom: 1px solid var(--cor-borda);
+            padding-bottom: 1rem;
+        }
+
+        .quick-actions-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        /* TABELA SIGEF */
+        .table-responsive {
+            overflow-x: auto;
+            border: 1px solid var(--cor-borda);
+            border-radius: 8px;
+        }
+
+        .table-sigef {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: left;
+            background: #FFFFFF;
+        }
+
+        .table-sigef thead th {
+            padding: 0.75rem 0.85rem;
+            font-weight: 700;
+            border: 1px solid var(--cor-borda);
+        }
+
+        .table-sigef thead .group-header {
+            background-color: var(--cor-primaria);
+            color: #FFFFFF;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-size: 0.8rem;
+        }
+
+        .table-sigef thead .column-header {
+            background-color: var(--cor-primaria-clara);
+            color: var(--cor-primaria);
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        .table-sigef tbody td {
+            padding: 0.65rem 0.85rem;
+            border: 1px solid var(--cor-borda);
+            color: var(--cor-texto);
+            white-space: nowrap;
+        }
+
+        .table-sigef tbody tr:nth-child(even) {
+            background-color: #FBFDFB;
+        }
+
+        .table-sigef tbody tr:hover {
+            background-color: var(--cor-primaria-clara);
+        }
+
+        .table-empty-row td {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--cor-texto-suave);
+            font-size: 0.95rem;
+            background-color: #FAFAFA;
+        }
+
+        /* FLASH MESSAGES */
+        .alert {
+            padding: 0.85rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .alert-success {
+            background-color: #DCFCE7;
+            color: #166534;
+            border: 1px solid #BBF7D0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- BARRA DE NAVEGAÇÃO -->
+    <header>
+        <div class="header-container">
+            <div class="logo-area">
+                <a href="/dashboard" class="logo">NexaTopoGeo</a>
+                <span class="badge-tag">B2B Agrimensura</span>
+            </div>
+            <div class="header-actions">
+                <a href="/dashboard" class="btn-link">← Voltar ao Kanban</a>
+                <a href="/perfil" class="btn-link">Meu Perfil</a>
+                <div class="user-pill">
+                    👤 <span>{{ nome_usuario }}</span>
+                </div>
+                <a href="/logout" class="btn-link" style="color: #DC2626;">Sair</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- BREADCRUMB -->
+        <div class="breadcrumb">
+            <a href="/dashboard">Projetos</a>
+            <span>/</span>
+            <span>Detalhes do Projeto #{{ projeto.id }}</span>
+        </div>
+
+        <!-- MENSAGENS FEEDBACK -->
+        <script>
+            const urlParams = new URLSearchParams(window.location.search);
+            const msg = urlParams.get('msg');
+            if (msg === 'status_atualizado') {
+                document.write('<div class="alert alert-success">✓ Fase do projeto atualizada com sucesso!</div>');
+            } else if (msg === 'upload_sucesso') {
+                document.write('<div class="alert alert-success">✓ Documento anexado com sucesso!</div>');
+            }
+        </script>
+
+        <!-- CABEÇALHO DO PROJETO -->
+        <div class="project-hero">
+            <div class="project-hero-info">
+                <h1>{{ projeto.titulo }}</h1>
+                <div class="project-meta">
+                    <span>Cliente: <strong>{{ cliente.nome_razao if cliente else 'Não vinculado' }}</strong></span>
+                    <span>•</span>
+                    <span>Área: <strong>{{ "%.2f"|format(projeto.area_hectares) if projeto.area_hectares else 'N/A' }} ha</strong></span>
+                    <span>•</span>
+                    <span>Fase Atual: <span class="phase-badge">{{ projeto.status }}</span></span>
+                </div>
+            </div>
+
+            <!-- SELETOR INLINE DE FASES -->
+            <form action="/projetos/{{ projeto.id }}/atualizar-status" method="POST" class="status-form">
+                <label for="status-select">Alterar Fase:</label>
+                <select id="status-select" name="status" class="form-select">
+                    <option value="orcamento" {% if projeto.status == 'orcamento' %}selected{% endif %}>Orçamento</option>
+                    <option value="campo" {% if projeto.status == 'campo' %}selected{% endif %}>Campo</option>
+                    <option value="desenho" {% if projeto.status == 'desenho' %}selected{% endif %}>Desenho</option>
+                    <option value="cartorio" {% if projeto.status == 'cartorio' %}selected{% endif %}>Cartório</option>
+                    <option value="concluido" {% if projeto.status == 'concluido' %}selected{% endif %}>Concluído</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Atualizar Fase</button>
+            </form>
+        </div>
+
+        <!-- SEÇÃO WORKSPACE: UPLOAD E DOCUMENTOS ANEXADOS -->
+        <div class="workspace-grid">
+            
+            <!-- UPLOAD DE ARQUIVOS -->
+            <div class="panel-card">
+                <h2 class="panel-title">📤 Upload de Documentos</h2>
+                <form id="uploadDocForm" action="/documentos/upload" method="POST" enctype="multipart/form-data" class="upload-form-box">
+                    <input type="hidden" name="projeto_id" value="{{ projeto.id }}">
+                    
+                    <div class="file-dropzone">
+                        <input type="file" name="file" id="fileInput" required accept=".csv,.xlsx,.dwg,.dxf,.pdf">
+                        <div class="file-hints">
+                            Formatos suportados: <strong>.csv, .xlsx (SIGEF), .dwg, .dxf (CAD), .pdf</strong>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btnUpload" class="btn btn-primary" style="justify-content: center;">
+                        Fazer Upload
+                    </button>
+                </form>
+            </div>
+
+            <!-- DOCUMENTOS ANEXADOS -->
+            <div class="panel-card">
+                <h2 class="panel-title">📁 Documentos do Projeto ({{ documentos|length }})</h2>
+                {% if documentos %}
+                    <ul class="doc-list">
+                        {% for doc in documentos %}
+                            <li class="doc-item">
+                                <div class="doc-info">
+                                    <span class="doc-badge {{ 'csv' if 'csv' in doc.tipo else ('dxf' if 'dxf' in doc.tipo else 'pdf') }}">
+                                        {{ doc.tipo }}
+                                    </span>
+                                    <span class="doc-name" title="{{ doc.nome_arquivo }}">{{ doc.nome_arquivo }}</span>
+                                </div>
+                                <span class="doc-date">
+                                    {{ doc.upload_em.strftime('%d/%m/%Y %H:%M') if doc.upload_em else '' }}
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="empty-message">
+                        Nenhum documento anexado ainda ao projeto.
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <!-- SEÇÃO TABELA SIGEF & AÇÕES RÁPIDAS -->
+        <div class="sigef-section">
+            <div class="sigef-header">
+                <h2 class="panel-title" style="border: none; padding: 0;">🌐 Tabela de Vértices - Padrão SIGEF/INCRA</h2>
+                
+                <!-- AÇÕES RÁPIDAS -->
+                <div class="quick-actions-bar">
+                    <button type="button" class="btn btn-secondary" onclick="alert('Processamento de Planilha SIGEF em desenvolvimento')">
+                        📊 Processar Planilha SIGEF
+                    </button>
+                    <button type="button" id="btnGerarCroqui" class="btn btn-secondary" onclick="acionarGerarCroqui()">
+                        📐 Gerar Croqui DXF
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="alert('Geração de Memorial Descritivo em desenvolvimento')">
+                        📄 Gerar Memorial Descritivo
+                    </button>
+                </div>
+            </div>
+
+            <!-- TABELA SIGEF -->
+            <div class="table-responsive">
+                <table class="table-sigef">
+                    <thead>
+                        <tr>
+                            <th colspan="4" class="group-header">VÉRTICE</th>
+                            <th colspan="4" class="group-header">SEGMENTO VANTE</th>
+                        </tr>
+                        <tr>
+                            <th class="column-header">Código</th>
+                            <th class="column-header">Longitude</th>
+                            <th class="column-header">Latitude</th>
+                            <th class="column-header">Altitude (m)</th>
+                            <th class="column-header">Código Vante</th>
+                            <th class="column-header">Azimute</th>
+                            <th class="column-header">Distância (m)</th>
+                            <th class="column-header">Confrontações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vertice in vertices %}
+                            <tr>
+                                <td><strong>{{ vertice.codigo_vertice or '-' }}</strong></td>
+                                <td>{{ vertice.longitude or '-' }}</td>
+                                <td>{{ vertice.latitude or '-' }}</td>
+                                <td>{{ vertice.altitude or '-' }}</td>
+                                <td>{{ vertice.codigo_segmento_vante or '-' }}</td>
+                                <td>{{ vertice.azimute or '-' }}</td>
+                                <td>{{ vertice.distancia or '-' }}</td>
+                                <td>{{ vertice.confrontacao or '-' }}</td>
+                            </tr>
+                        {% else %}
+                            <tr class="table-empty-row">
+                                <td colspan="8">
+                                    Nenhum dado processado. Faça o upload da planilha SIGEF/CSV para popular a tabela.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- SCRIPTS DE INTERATIVIDADE -->
+    <script>
+        // Disparo assíncrono para a rota de geração de croqui
+        async function acionarGerarCroqui() {
+            const btn = document.getElementById('btnGerarCroqui');
+            btn.disabled = true;
+            btn.innerText = 'Gerando DXF...';
+
+            try {
+                const response = await fetch('/projetos/{{ projeto.id }}/gerar-croqui', {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    alert('Croqui DXF gerado com sucesso e anexado aos documentos!');
+                    window.location.reload();
+                } else {
+                    const data = await response.json().catch(() => ({}));
+                    alert('Falha ao gerar croqui: ' + (data.detail || 'Erro desconhecido.'));
+                }
+            } catch (err) {
+                alert('Erro de conexão ao gerar o croqui DXF.');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '📐 Gerar Croqui DXF';
+            }
+        }
+    </script>
+
+</body>
+</html>
+

@@ -12,9 +12,10 @@ class Usuario(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     senha_hash = Column(String(255), nullable=False)
     role = Column(String(50), default="usuario", nullable=False)
-    is_premium = Column(Boolean, default=False, nullable=False)
+    is_premium = Column(Boolean, default=False, server_default="0", nullable=False)
     stripe_customer_id = Column(String(255), nullable=True)
     avatar_url = Column(String(500), nullable=True)
+    bio = Column(String(500), nullable=True)
 
     # Relacionamentos
     clientes = relationship("Cliente", back_populates="usuario")
@@ -51,6 +52,7 @@ class Projeto(Base):
     cliente = relationship("Cliente", back_populates="projetos")
     tecnico = relationship("Usuario", back_populates="projetos", foreign_keys=[usuario_id_tecnico])
     documentos = relationship("Documento", back_populates="projeto", cascade="all, delete-orphan")
+    vertices = relationship("Vertice", back_populates="projeto", cascade="all, delete-orphan")
 
 
 class Documento(Base):
@@ -65,4 +67,23 @@ class Documento(Base):
 
     # Relacionamentos
     projeto = relationship("Projeto", back_populates="documentos")
+
+
+class Vertice(Base):
+    __tablename__ = "vertices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    projeto_id = Column(Integer, ForeignKey("projetos.id"), nullable=False)
+    codigo_vertice = Column(String(50), nullable=True)
+    longitude = Column(String(50), nullable=True)
+    latitude = Column(String(50), nullable=True)
+    altitude = Column(String(50), nullable=True)
+    codigo_segmento_vante = Column(String(50), nullable=True)
+    azimute = Column(String(50), nullable=True)
+    distancia = Column(String(50), nullable=True)
+    confrontacao = Column(String(255), nullable=True)
+
+    # Relacionamentos
+    projeto = relationship("Projeto", back_populates="vertices")
+
 

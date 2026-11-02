@@ -1,10 +1,9 @@
 import requests
-from fastapi import FastAPI, Form, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 import mysql.connector
 import bcrypt
 import uuid
 import smtplib
-from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -32,9 +31,31 @@ def get_db_connection():
         database=os.getenv("DB_NAME")
     )
 
+async def obter_payload(request: Request) -> dict:
+    """Extrai os parâmetros da requisição tanto no formato JSON quanto Form-Data."""
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        try:
+            return await request.json()
+        except Exception:
+            return {}
+    try:
+        form = await request.form()
+        return dict(form)
+    except Exception:
+        return {}
+
 @app.post("/cadastrar")
-def cadastrar(nome: str = Form(...), email: str = Form(...), senha: str = Form(...)):
-    """Recebe os dados do Catálogo, criptografa a senha e salva no banco."""
+async def cadastrar(request: Request):
+    """Recebe os dados cadastrais, criptografa a senha e salva no banco."""
+    dados = await obter_payload(request)
+    nome = dados.get("nome")
+    email = dados.get("email")
+    senha = dados.get("senha")
+
+    if not nome or not email or not senha:
+        raise HTTPException(status_code=400, detail="Campos nome, email e senha são obrigatórios.")
+
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -47,9 +68,10 @@ def cadastrar(nome: str = Form(...), email: str = Form(...), senha: str = Form(.
             (nome, email, senha_hash, 'usuario')
         )
         conn.commit()
-    except Exception:
+    except Exception as e:
         cursor.close()
         conn.close()
+        print(f"[DEBUG AUTH-SERVICE] Erro ao inserir usuário ({email}): {e}")
         raise HTTPException(status_code=400, detail="E-mail já cadastrado")
     
     cursor.close()
@@ -57,8 +79,15 @@ def cadastrar(nome: str = Form(...), email: str = Form(...), senha: str = Form(.
     return {"status": "sucesso"}
 
 @app.post("/login")
-def login(request: Request, email: str = Form(...), senha: str = Form(...)): # <-- 1. Adicionado o request aqui
+async def login(request: Request):
     """Valida as credenciais, dispara o log e devolve o ID e o Papel (Role) do usuário."""
+    dados = await obter_payload(request)
+    email = dados.get("email")
+    senha = dados.get("senha")
+
+    if not email or not senha:
+        raise HTTPException(status_code=400, detail="E-mail e senha são obrigatórios.")
+
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
@@ -70,11 +99,10 @@ def login(request: Request, email: str = Form(...), senha: str = Form(...)): # <
 
     # Verifica se o usuário existe e se a senha bate
     if user and bcrypt.checkpw(senha.encode('utf-8'), user['senha_hash'].encode('utf-8')):
-        # 2. Isolamos as variáveis para usá-las limpas
         usuario_id = user['id']
         role = user['role']
 
-        # --- 3. Dispara o log ANTES do return ---
+        # Dispara o log ANTES do return
         disparar_log_auditoria(request, usuario_id, "login")
             
         return {"status": "sucesso", "usuario_id": usuario_id, "role": role}
@@ -83,8 +111,14 @@ def login(request: Request, email: str = Form(...), senha: str = Form(...)): # <
     raise HTTPException(status_code=401, detail="E-mail ou senha inválidos")
 
 @app.post("/esqueci-senha")
-def esqueci_senha(email: str = Form(...)):
+async def esqueci_senha(request: Request):
     """Gera um token UUID único, salva no banco e dispara o e-mail HTML via Brevo."""
+    dados = await obter_payload(request)
+    email = dados.get("email")
+
+    if not email:
+        raise HTTPException(status_code=400, detail="E-mail é obrigatório.")
+
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
@@ -112,31 +146,30 @@ def esqueci_senha(email: str = Form(...)):
     smtp_pass = os.getenv("SMTP_PASS")
     smtp_from = os.getenv("SMTP_FROM", smtp_user)
     
-    # Se estiver rodando no servidor da faculdade (lapps.studio), você pode ajustar a URL base se desejar
     app_url = os.getenv("APP_URL", "https://marcio-silva-isw055.lapps.studio")
     link = f"{app_url}/nova-senha?token={token}"
     
     # Construção do E-mail com suporte a HTML
     msg = MIMEMultipart("alternative")
-    msg['Subject'] = 'Redefinição de Senha - TomFlix'
-    msg['From'] = f"TomFlix Suporte <{smtp_from}>"
+    msg['Subject'] = 'Redefinição de Senha - NexaTopoGeo'
+    msg['From'] = f"NexaTopoGeo Suporte <{smtp_from}>"
     msg['To'] = email
 
     # Versão em texto simples (fallback de segurança)
     texto_simples = f"Acesse o link para redefinir sua senha: {link} (Expira em 30 minutos)."
 
-    # Versão em HTML estilizada no padrão TomFlix com botão
+    # Versão em HTML estilizada
     html_content = f"""
     <html>
-      <body style="font-family: Arial, sans-serif; background-color: #141414; color: #ffffff; padding: 30px; text-align: center;">
-        <div style="max-width: 500px; margin: 0 auto; background-color: #222222; padding: 30px; border-radius: 8px; border-top: 4px solid #E50914;">
-          <h1 style="color: #E50914; margin-top: 0;">TomFlix</h1>
-          <h3 style="color: #ffffff;">Recuperação de Senha</h3>
-          <p style="color: #cccccc; font-size: 15px; line-height: 1.5;">
+      <body style="font-family: Arial, sans-serif; background-color: #F8F9FA; color: #333333; padding: 30px; text-align: center;">
+        <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; border-top: 4px solid #2E472D; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+          <h1 style="color: #2E472D; margin-top: 0;">NexaTopoGeo</h1>
+          <h3 style="color: #333333;">Recuperação de Senha</h3>
+          <p style="color: #666666; font-size: 15px; line-height: 1.5;">
             Recebemos uma solicitação para redefinir a senha da sua conta. Clique no botão abaixo para criar uma nova senha:
           </p>
           <div style="margin: 30px 0;">
-            <a href="{link}" style="background-color: #E50914; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 16px; display: inline-block;">
+            <a href="{link}" style="background-color: #2E472D; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block;">
               Redefinir Minha Senha
             </a>
           </div>
@@ -152,9 +185,8 @@ def esqueci_senha(email: str = Form(...)):
     msg.attach(MIMEText(html_content, "html", "utf-8"))
 
     try:
-        # Conexão oficial com o servidor SMTP do Brevo na porta 587 com TLS
         with smtplib.SMTP("smtp-relay.brevo.com", 587, timeout=10) as server:
-            server.starttls() # Obrigatório para autenticar no Brevo
+            server.starttls()
             server.login(smtp_user, smtp_pass)
             server.sendmail(smtp_from, [email], msg.as_string())
     except Exception as e:
@@ -164,8 +196,15 @@ def esqueci_senha(email: str = Form(...)):
     return {"status": "sucesso", "message": "E-mail de recuperação enviado."}
 
 @app.post("/resetar-senha")
-def resetar_senha(token: str = Form(...), nova_senha: str = Form(...)):
+async def resetar_senha(request: Request):
     """Valida o token temporal e aplica o Hash na nova senha."""
+    dados = await obter_payload(request)
+    token = dados.get("token")
+    nova_senha = dados.get("nova_senha")
+
+    if not token or not nova_senha:
+        raise HTTPException(status_code=400, detail="Token e nova senha são obrigatórios.")
+
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     

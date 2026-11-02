@@ -570,7 +570,7 @@
                 <div class="cards-list">
                     {% for projeto in projetos_por_status['orcamento'] %}
                         <div class="project-card">
-                            <h3 class="card-title">{{ projeto.titulo }}</h3>
+                            <h3 class="card-title"><a href="/projetos/{{ projeto.id }}" style="text-decoration: none; color: inherit;">{{ projeto.titulo }}</a></h3>
                             <div class="card-info">
                                 <div class="card-info-item">
                                     <span>Cliente:</span>
@@ -596,7 +596,7 @@
                 <div class="cards-list">
                     {% for projeto in projetos_por_status['campo'] %}
                         <div class="project-card">
-                            <h3 class="card-title">{{ projeto.titulo }}</h3>
+                            <h3 class="card-title"><a href="/projetos/{{ projeto.id }}" style="text-decoration: none; color: inherit;">{{ projeto.titulo }}</a></h3>
                             <div class="card-info">
                                 <div class="card-info-item">
                                     <span>Cliente:</span>
@@ -622,7 +622,7 @@
                 <div class="cards-list">
                     {% for projeto in projetos_por_status['desenho'] %}
                         <div class="project-card">
-                            <h3 class="card-title">{{ projeto.titulo }}</h3>
+                            <h3 class="card-title"><a href="/projetos/{{ projeto.id }}" style="text-decoration: none; color: inherit;">{{ projeto.titulo }}</a></h3>
                             <div class="card-info">
                                 <div class="card-info-item">
                                     <span>Cliente:</span>
@@ -648,7 +648,7 @@
                 <div class="cards-list">
                     {% for projeto in projetos_por_status['cartorio'] %}
                         <div class="project-card">
-                            <h3 class="card-title">{{ projeto.titulo }}</h3>
+                            <h3 class="card-title"><a href="/projetos/{{ projeto.id }}" style="text-decoration: none; color: inherit;">{{ projeto.titulo }}</a></h3>
                             <div class="card-info">
                                 <div class="card-info-item">
                                     <span>Cliente:</span>
@@ -674,7 +674,7 @@
                 <div class="cards-list">
                     {% for projeto in projetos_por_status['concluido'] %}
                         <div class="project-card">
-                            <h3 class="card-title">{{ projeto.titulo }}</h3>
+                            <h3 class="card-title"><a href="/projetos/{{ projeto.id }}" style="text-decoration: none; color: inherit;">{{ projeto.titulo }}</a></h3>
                             <div class="card-info">
                                 <div class="card-info-item">
                                     <span>Cliente:</span>

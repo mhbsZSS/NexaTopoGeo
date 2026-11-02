@@ -5,7 +5,7 @@ from starlette.middleware.sessions import SessionMiddleware
 import os
 import requests 
 from database import get_db_connection, get_db
-from models import Documento, Projeto, Cliente, Usuario
+from models import Documento, Projeto, Cliente, Usuario, Vertice
 from dxf_service import gerar_croqui_dxf
 from sqlalchemy.orm import Session
 import uuid 
@@ -68,52 +68,65 @@ def disparar_log_auditoria(request: Request, usuario_id: int, acao: str):
 @app.get("/", response_class=HTMLResponse)
 def landing_page(request: Request):
     if request.session.get("usuario_id"):
-        return RedirectResponse(url="/catalogo", status_code=303)
+        return RedirectResponse(url="/dashboard", status_code=303)
     return templates.TemplateResponse(request=request, name="landing.html")
 
 @app.get("/login", response_class=HTMLResponse)
 def tela_login(request: Request):
     if request.session.get("usuario_id"):
-        return RedirectResponse(url="/catalogo", status_code=303)
+        return RedirectResponse(url="/dashboard", status_code=303)
     return templates.TemplateResponse(request=request, name="login.html")
 
 @app.get("/cadastrar", response_class=HTMLResponse)
 def tela_cadastro(request: Request):
     if request.session.get("usuario_id"):
-        return RedirectResponse(url="/catalogo", status_code=303)
+        return RedirectResponse(url="/dashboard", status_code=303)
     return templates.TemplateResponse(request=request, name="cadastro.html")
+
+@app.get("/catalogo")
+def redirecionar_catalogo():
+    return RedirectResponse(url="/dashboard", status_code=303)
 
 @app.post("/cadastrar")
 def cadastrar_usuario(request: Request, nome: str = Form(...), email: str = Form(...), senha: str = Form(...)):
     try:
-        resposta = requests.post(f"{AUTH_URL}/cadastrar", data={"nome": nome, "email": email, "senha": senha}, timeout=10)
+        resposta = requests.post(f"{AUTH_URL}/cadastrar", json={"nome": nome, "email": email, "senha": senha}, timeout=10)
         if resposta.status_code == 200:
             return RedirectResponse(url="/login?msg=cadastro_sucesso", status_code=303)
-        # Redireciona de volta para cadastro em caso de erro
+        
+        print(f"[DEBUG AUTH] Erro no cadastro: {resposta.text}")
         return RedirectResponse(url="/cadastrar?msg=erro_cadastro", status_code=303)
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG AUTH] Erro de rede no cadastro: {e}")
         return RedirectResponse(url="/cadastrar?msg=erro_offline", status_code=303)
 
 @app.post("/login")
 def realizar_login(request: Request, email: str = Form(...), senha: str = Form(...)):
     try:
-        resposta = requests.post(f"{AUTH_URL}/login", data={"email": email, "senha": senha}, timeout=10)
+        resposta = requests.post(f"{AUTH_URL}/login", json={"email": email, "senha": senha}, timeout=10)
         if resposta.status_code == 200:
             dados = resposta.json()
             request.session["usuario_id"] = dados["usuario_id"]
             request.session["role"] = dados["role"] 
-            return RedirectResponse(url="/catalogo", status_code=303)
-        # Redireciona em caso de credencial inválida para a tela de login
+            return RedirectResponse(url="/dashboard", status_code=303)
+        
+        print(f"[DEBUG AUTH] Erro no login: {resposta.text}")
         return RedirectResponse(url="/login?msg=erro_login", status_code=303)
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG AUTH] Erro de rede no login: {e}")
         return RedirectResponse(url="/login?msg=erro_offline", status_code=303)
 
 @app.post("/esqueci-senha")
 def esqueci_senha(request: Request, email: str = Form(...)):
     try:
-        requests.post(f"{AUTH_URL}/esqueci-senha", data={"email": email}, timeout=10)
+        resposta = requests.post(f"{AUTH_URL}/esqueci-senha", json={"email": email}, timeout=10)
+        if resposta.status_code == 200:
+            return RedirectResponse(url="/login?msg=email_enviado", status_code=303)
+        
+        print(f"[DEBUG AUTH] Erro no esqueci-senha: {resposta.text}")
         return RedirectResponse(url="/login?msg=email_enviado", status_code=303)
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG AUTH] Erro de rede no esqueci-senha: {e}")
         return RedirectResponse(url="/login?msg=erro_offline", status_code=303)
     
 @app.get("/nova-senha", response_class=HTMLResponse)
@@ -123,12 +136,14 @@ def tela_nova_senha(request: Request, token: str):
 @app.post("/resetar-senha")
 def resetar_senha(request: Request, token: str = Form(...), nova_senha: str = Form(...)):
     try:
-        resposta = requests.post(f"{AUTH_URL}/resetar-senha", data={"token": token, "nova_senha": nova_senha}, timeout=10)
+        resposta = requests.post(f"{AUTH_URL}/resetar-senha", json={"token": token, "nova_senha": nova_senha}, timeout=10)
         if resposta.status_code == 200:
             return RedirectResponse(url="/login?msg=senha_alterada", status_code=303)
-        # Captura o token inválido/expirado e devolve para o início
+        
+        print(f"[DEBUG AUTH] Erro no resetar-senha: {resposta.text}")
         return RedirectResponse(url="/login?msg=token_invalido", status_code=303)
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG AUTH] Erro de rede no resetar-senha: {e}")
         return RedirectResponse(url="/login?msg=erro_offline", status_code=303)
             
 @app.get("/logout")
@@ -241,6 +256,77 @@ def criar_novo_projeto(
     disparar_log_auditoria(request, usuario_id, f"criou_projeto_{novo_projeto.id}")
 
     return RedirectResponse(url="/dashboard?msg=projeto_criado", status_code=303)
+
+
+# ==========================================
+# DETALHES E STATUS DO PROJETO (KANBAN/SIGEF)
+# ==========================================
+@app.get("/projetos/{projeto_id}", response_class=HTMLResponse)
+def detalhe_projeto(projeto_id: int, request: Request, db: Session = Depends(get_db)):
+    usuario_id = request.session.get("usuario_id")
+    if not usuario_id:
+        return RedirectResponse(url="/login", status_code=303)
+
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    nome_usuario = usuario.nome if usuario else (request.session.get("nome_usuario") or "Usuário")
+    foto_url = f"/avatar/{usuario.avatar_url}" if (usuario and usuario.avatar_url) else None
+
+    projeto = db.query(Projeto).filter(Projeto.id == projeto_id).first()
+    if not projeto:
+        return RedirectResponse(url="/dashboard?msg=projeto_nao_encontrado", status_code=303)
+
+    cliente = projeto.cliente
+    documentos = (
+        db.query(Documento)
+        .filter(Documento.projeto_id == projeto_id)
+        .order_by(Documento.upload_em.desc())
+        .all()
+    )
+    vertices = (
+        db.query(Vertice)
+        .filter(Vertice.projeto_id == projeto_id)
+        .order_by(Vertice.id.asc())
+        .all()
+    )
+
+    return templates.TemplateResponse(request, "projeto_detalhe.html", {
+        "projeto": projeto,
+        "cliente": cliente,
+        "documentos": documentos,
+        "vertices": vertices,
+        "usuario": usuario,
+        "nome_usuario": nome_usuario,
+        "foto_url": foto_url,
+        "role": request.session.get("role", "usuario"),
+        "is_premium": usuario.is_premium if usuario else False
+    })
+
+
+@app.post("/projetos/{projeto_id}/atualizar-status")
+def atualizar_status_projeto(
+    projeto_id: int,
+    request: Request,
+    status: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    usuario_id = request.session.get("usuario_id")
+    if not usuario_id:
+        return RedirectResponse(url="/login", status_code=303)
+
+    projeto = db.query(Projeto).filter(Projeto.id == projeto_id).first()
+    if not projeto:
+        return RedirectResponse(url="/dashboard?msg=projeto_nao_encontrado", status_code=303)
+
+    status_normalizado = status.strip().lower()
+    status_permitidos = ["orcamento", "campo", "desenho", "cartorio", "concluido"]
+    if status_normalizado in status_permitidos:
+        projeto.status = status_normalizado
+        db.commit()
+        db.refresh(projeto)
+        disparar_log_auditoria(request, usuario_id, f"atualizou_status_projeto_{projeto_id}_para_{status_normalizado}")
+
+    return RedirectResponse(url=f"/projetos/{projeto_id}?msg=status_atualizado", status_code=303)
+
 
 @app.get("/auditoria", response_class=HTMLResponse)
 def painel_auditoria(request: Request, db: Session = Depends(get_db)):
@@ -511,7 +597,11 @@ async def upload_documento_form(
     db: Session = Depends(get_db)
 ):
     """Upload de documento via multipart/form-data."""
-    return await processar_upload_documento(projeto_id, request, file, db)
+    resultado = await processar_upload_documento(projeto_id, request, file, db)
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept and "application/json" not in accept:
+        return RedirectResponse(url=f"/projetos/{projeto_id}?msg=upload_sucesso", status_code=303)
+    return resultado
 
 
 @app.post("/projetos/{projeto_id}/gerar-croqui")
