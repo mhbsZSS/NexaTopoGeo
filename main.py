@@ -243,46 +243,47 @@ def criar_novo_projeto(
     return RedirectResponse(url="/dashboard?msg=projeto_criado", status_code=303)
 
 @app.get("/auditoria", response_class=HTMLResponse)
-def painel_auditoria(request: Request):
+def painel_auditoria(request: Request, db: Session = Depends(get_db)):
     usuario_id = request.session.get("usuario_id")
     role = request.session.get("role")
 
     # 1. Verifica se está logado
     if not usuario_id:
-        return RedirectResponse(url="/", status_code=303)
+        return RedirectResponse(url="/login", status_code=303)
         
     # ==========================================
-    # 2. ENFORCEMENT (Obrigatório para o Requisito 5)
+    # 2. ENFORCEMENT RBAC (Exclusivo Admin)
     # ==========================================
     if role != "admin":
-        # Dispara um log rastreando a tentativa de invasão ao painel
         disparar_log_auditoria(request, usuario_id, "tentativa_acesso_painel_auditoria_403")
         raise HTTPException(
             status_code=403, 
             detail="Acesso negado: Rota exclusiva para administradores do sistema."
         )
 
-    # 3. Consome os dados do microsserviço de log
+    # 3. Métricas de Negócio SaaS (Usuários Free vs Pro e MRR)
+    qtd_free = db.query(Usuario).filter(Usuario.is_premium == False).count()
+    qtd_pro = db.query(Usuario).filter(Usuario.is_premium == True).count()
+    mrr = round(qtd_pro * 149.90, 2)
+
+    # 4. Consome os dados do microsserviço de log
     try:
-        # Faz um GET na porta 4000 do contêiner log-service
         resposta = requests.get(f"{LOG_URL}/logs?limite=100", timeout=5)
         logs = resposta.json().get("logs", []) if resposta.status_code == 200 else []
     except Exception as e:
         print(f"Erro ao buscar logs: {e}")
         logs = []
 
-    # 4. Busca os nomes dos usuários para a tabela ficar legível
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id, nome FROM usuarios")
-    usuarios_db = {str(u['id']): u['nome'] for u in cursor.fetchall()}
-    cursor.close()
-    conn.close()
+    # 5. Busca os nomes dos usuários para enriquecer os logs
+    usuarios = db.query(Usuario).all()
+    usuarios_db = {str(u.id): u.nome for u in usuarios}
 
-    # Enriquece os logs com os nomes reais
     for log in logs:
         uid = log.get("usuario_id")
         log["nome_usuario"] = usuarios_db.get(uid, f"ID {uid}")
+
+    usuario_atual = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    nome_admin = usuario_atual.nome if usuario_atual else "Admin"
 
     return templates.TemplateResponse(
         request, 
@@ -290,7 +291,10 @@ def painel_auditoria(request: Request):
         {
             "logs": logs,
             "role": role,
-            "nome_usuario": request.session.get("nome_usuario", "Admin")
+            "nome_usuario": nome_admin,
+            "qtd_free": qtd_free,
+            "qtd_pro": qtd_pro,
+            "mrr": mrr
         }
     )
 
@@ -647,7 +651,7 @@ def criar_checkout_session(request: Request):
 async def stripe_webhook(request: Request):
     """
     Esta rota não é acessada pelo usuário, é o Stripe que a chama 
-    por debaixo dos panos quando o pagamento é aprovado.
+    por debaixo dos panos quando o pagamento é aprovado, cancelado ou falha.
     """
     # O Stripe exige o body cru (raw) para validar a assinatura de segurança
     payload = await request.body()
@@ -665,30 +669,42 @@ async def stripe_webhook(request: Request):
         # Assinatura de segurança falsa/inválida
         raise HTTPException(status_code=400, detail="Assinatura inválida")
 
-    # Verifica se a notificação é de um pagamento concluído com sucesso
-    if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-        
-        # Lembra que mandamos o ID do usuário oculto? Agora o Stripe nos devolve!
-        usuario_id = session.get("client_reference_id")
-        customer_id = session.get("customer")
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
-        if usuario_id:
-            # Efetiva o benefício atualizando o banco de dados
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            try:
+    try:
+        # 1. Evento de Assinatura Ativa (Checkout realizado com sucesso)
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            usuario_id = session.get("client_reference_id")
+            customer_id = session.get("customer")
+
+            if usuario_id:
                 cursor.execute(
                     "UPDATE usuarios SET is_premium = TRUE, stripe_customer_id = %s WHERE id = %s",
                     (customer_id, usuario_id)
                 )
                 conn.commit()
-                print(f"Sucesso! Usuário {usuario_id} agora é PREMIUM.")
-            except Exception as e:
-                print(f"Erro ao atualizar banco no webhook: {e}")
-            finally:
-                cursor.close()
-                conn.close()
+                print(f"Sucesso! Usuário {usuario_id} agora é PREMIUM (Customer: {customer_id}).")
+
+        # 2. Eventos de Cancelamento ou Falha de Pagamento (Rebaixa para Free)
+        elif event['type'] in ['customer.subscription.deleted', 'invoice.payment_failed']:
+            data_object = event['data']['object']
+            customer_id = data_object.get("customer")
+
+            if customer_id:
+                cursor.execute(
+                    "UPDATE usuarios SET is_premium = FALSE WHERE stripe_customer_id = %s",
+                    (customer_id,)
+                )
+                conn.commit()
+                print(f"Evento '{event['type']}' processado: Usuário com Stripe Customer '{customer_id}' rebaixado para plano FREE.")
+
+    except Exception as e:
+        print(f"Erro ao processar evento no webhook: {e}")
+    finally:
+        cursor.close()
+        conn.close()
 
     # O Stripe espera um status 200 para saber que recebemos a mensagem
     return {"status": "sucesso"}

@@ -2,58 +2,262 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>TomFlix - Auditoria (Admin)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo & Auditoria - NexaTopoGeo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; background-color: #141414; color: #fff; margin: 0; padding: 20px; }
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #E50914; padding-bottom: 10px; margin-bottom: 20px; }
-        h1 { color: #E50914; margin: 0; }
-        .btn-voltar { background-color: #333; color: white; text-decoration: none; padding: 8px 15px; border-radius: 4px; }
-        table { width: 100%; border-collapse: collapse; background-color: #222; margin-top: 20px; }
-        th, td { border: 1px solid #444; padding: 12px; text-align: left; }
-        th { background-color: #E50914; color: white; }
-        tr:nth-child(even) { background-color: #1a1a1a; }
-        .tag-acao { font-family: monospace; background-color: #333; padding: 3px 6px; border-radius: 3px; color: #ffa500; }
-        .tag-403 { color: #E50914; font-weight: bold; }
+        :root {
+            --cor-primaria: #2E472D;
+            --cor-primaria-hover: #243823;
+            --cor-primaria-clara: #EAF0EA;
+            --cor-fundo: #F8F9FA;
+            --cor-card: #FFFFFF;
+            --cor-texto: #333333;
+            --cor-texto-suave: #666666;
+            --cor-borda: #E2E8F0;
+            --sombra-card: 0 4px 12px rgba(46, 71, 45, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            line-height: 1.5;
+            padding: 2rem;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--cor-borda);
+            padding-bottom: 1.25rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-title h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--cor-primaria);
+            letter-spacing: -0.5px;
+        }
+
+        .header-title p {
+            color: var(--cor-texto-suave);
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+        }
+
+        .btn-voltar {
+            background-color: var(--cor-primaria);
+            color: #FFFFFF;
+            text-decoration: none;
+            padding: 0.65rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .btn-voltar:hover {
+            background-color: var(--cor-primaria-hover);
+        }
+
+        /* DASHBOARD GERENCIAL (KPIS DE NEGÓCIO) */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .kpi-card {
+            background-color: var(--cor-card);
+            border: 1px solid var(--cor-borda);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--sombra-card);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .kpi-card.destaque {
+            border-left: 5px solid var(--cor-primaria);
+        }
+
+        .kpi-card.pro {
+            border-left: 5px solid #D69E2E;
+        }
+
+        .kpi-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--cor-texto-suave);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--cor-primaria);
+            line-height: 1.1;
+        }
+
+        .kpi-sub {
+            font-size: 0.825rem;
+            color: var(--cor-texto-suave);
+        }
+
+        /* SEÇÃO DE AUDITORIA */
+        .secao-header {
+            margin-bottom: 1rem;
+        }
+
+        .secao-header h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--cor-primaria);
+        }
+
+        .secao-header p {
+            color: var(--cor-texto-suave);
+            font-size: 0.9rem;
+        }
+
+        .table-container {
+            background-color: var(--cor-card);
+            border: 1px solid var(--cor-borda);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--sombra-card);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--cor-borda);
+            font-size: 0.9rem;
+        }
+
+        th {
+            background-color: var(--cor-primaria-clara);
+            color: var(--cor-primaria);
+            font-weight: 700;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: #FAFAFA;
+        }
+
+        .tag-acao {
+            font-family: monospace;
+            background-color: #EDF2F7;
+            color: #2D3748;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .tag-403 {
+            background-color: #FFF5F5;
+            color: #C53030;
+            border: 1px solid #FEB2B2;
+        }
     </style>
 </head>
 <body>
+
     <header>
-        <h1>Painel de Auditoria</h1>
-        <div>
-            <a href="/catalogo" class="btn-voltar">Voltar ao Catálogo</a>
+        <div class="header-title">
+            <h1>Painel Gerencial & Auditoria</h1>
+            <p>Métricas de negócio SaaS e registro de logs em tempo real (Redis Streams)</p>
         </div>
+        <a href="/dashboard" class="btn-voltar">← Voltar ao Dashboard</a>
     </header>
 
-    <p>Mostrando os eventos mais recentes registrados no Redis Streams.</p>
+    <!-- BLOCO DO DASHBOARD GERENCIAL (KPIS STRIPE) -->
+    <section class="kpi-grid">
+        <div class="kpi-card">
+            <span class="kpi-label">Usuários Free</span>
+            <span class="kpi-value">{{ qtd_free }}</span>
+            <span class="kpi-sub">Limite de 2 projetos/mês</span>
+        </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Data / Hora</th>
-                <th>Usuário</th>
-                <th>Ação Executada</th>
-                <th>IP de Origem</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for log in logs %}
-            <tr>
-                <!-- Formatação simples do Timestamp ISO do Python -->
-                <td>{{ log.timestamp[:19].replace('T', ' ') }}</td>
-                <td>{{ log.nome_usuario }}</td>
-                <td>
-                    <span class="tag-acao {% if '403' in log.acao %}tag-403{% endif %}">
-                        {{ log.acao }}
-                    </span>
-                </td>
-                <td>{{ log.ip_origem }}</td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="4" style="text-align: center;">Nenhum evento registrado ainda.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <div class="kpi-card pro">
+            <span class="kpi-label">Assinantes Pro</span>
+            <span class="kpi-value">{{ qtd_pro }}</span>
+            <span class="kpi-sub">Acesso ilimitado e croquis DXF</span>
+        </div>
+
+        <div class="kpi-card destaque">
+            <span class="kpi-label">MRR Estimado (Mensal)</span>
+            <span class="kpi-value">R$ {{ "%.2f"|format(mrr) }}</span>
+            <span class="kpi-sub">Calculado a R$ 149,90 por assinante Pro</span>
+        </div>
+    </section>
+
+    <!-- TABELA DE LOGS DE AUDITORIA -->
+    <div class="secao-header">
+        <h2>Trilha de Auditoria do Sistema</h2>
+        <p>Monitoramento dos últimos eventos e tentativas de acesso registradas</p>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Data / Hora</th>
+                    <th>Usuário</th>
+                    <th>Ação Executada</th>
+                    <th>IP de Origem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.timestamp[:19].replace('T', ' ') }}</td>
+                    <td><strong>{{ log.nome_usuario }}</strong></td>
+                    <td>
+                        <span class="tag-acao {% if '403' in log.acao %}tag-403{% endif %}">
+                            {{ log.acao }}
+                        </span>
+                    </td>
+                    <td>{{ log.ip_origem }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 2rem; color: #A0AEC0;">
+                        Nenhum evento registrado ainda no sistema de auditoria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
 </body>
 </html>
