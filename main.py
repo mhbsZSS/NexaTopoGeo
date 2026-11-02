@@ -6,6 +6,7 @@ import os
 import requests 
 from database import get_db_connection, get_db
 from models import Documento
+from dxf_service import gerar_croqui_dxf
 from sqlalchemy.orm import Session
 import uuid 
 from datetime import timedelta 
@@ -568,6 +569,101 @@ async def upload_documento_form(
 ):
     """Upload de documento via multipart/form-data."""
     return await processar_upload_documento(projeto_id, request, file, db)
+
+
+@app.post("/projetos/{projeto_id}/gerar-croqui")
+async def gerar_croqui_projeto(
+    projeto_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    # 4. SEGURANÇA: Autenticação e RBAC (admin/técnico)
+    usuario_id = request.session.get("usuario_id")
+    role = request.session.get("role")
+
+    if not usuario_id and "authorization" in request.headers:
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+            try:
+                from jose import jwt
+                payload = jwt.decode(token, os.getenv("SECRET_KEY", ""), algorithms=["HS256"])
+                usuario_id = payload.get("usuario_id") or payload.get("sub")
+                role = payload.get("role")
+            except Exception:
+                pass
+
+    if not usuario_id:
+        raise HTTPException(status_code=401, detail="Não autorizado")
+
+    if role not in ["admin", "tecnico", "usuario"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Acesso negado: apenas técnicos ou administradores podem gerar croquis."
+        )
+
+    # Coordenadas fictícias simulando leitura de dados do SIGEF
+    pontos_mock = [
+        {"vertice": "P01", "x": 100.0, "y": 100.0},
+        {"vertice": "P02", "x": 250.0, "y": 100.0},
+        {"vertice": "P03", "x": 250.0, "y": 250.0},
+        {"vertice": "P04", "x": 100.0, "y": 200.0},
+    ]
+
+    nome_arquivo_dxf = f"croqui_projeto_{projeto_id}.dxf"
+    minio_object_name = f"projeto_{projeto_id}_croqui_{uuid.uuid4().hex}.dxf"
+
+    caminho_local_dxf = None
+    try:
+        # Gera o arquivo DXF local temporário
+        caminho_local_dxf = gerar_croqui_dxf(nome_arquivo_dxf, pontos_mock)
+
+        # Upload do arquivo DXF gerado para o MinIO
+        minio_client.fput_object(
+            MINIO_BUCKET_NAME,
+            minio_object_name,
+            caminho_local_dxf,
+            content_type="application/dxf"
+        )
+    except S3Error as e:
+        print(f"Erro no upload do MinIO: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao salvar o croqui no servidor de storage.")
+    except Exception as e:
+        print(f"Erro ao processar croqui DXF: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro na geração do croqui DXF: {str(e)}")
+    finally:
+        # Apaga o arquivo DXF temporário local após o upload para o MinIO
+        if caminho_local_dxf and os.path.exists(caminho_local_dxf):
+            try:
+                os.remove(caminho_local_dxf)
+            except OSError as err:
+                print(f"Aviso ao remover temporário: {err}")
+
+    # Registra o novo arquivo no banco de dados na tabela Documento com o tipo 'croqui_dxf'
+    documento = Documento(
+        projeto_id=projeto_id,
+        nome_arquivo=nome_arquivo_dxf,
+        minio_object_name=minio_object_name,
+        tipo="croqui_dxf"
+    )
+    db.add(documento)
+    db.commit()
+    db.refresh(documento)
+
+    disparar_log_auditoria(request, usuario_id, f"gerou_croqui_dxf_projeto_{projeto_id}")
+
+    return {
+        "status": "sucesso",
+        "mensagem": "Croqui DXF gerado e armazenado com sucesso",
+        "documento": {
+            "id": documento.id,
+            "projeto_id": documento.projeto_id,
+            "nome_arquivo": documento.nome_arquivo,
+            "minio_object_name": documento.minio_object_name,
+            "tipo": documento.tipo,
+            "upload_em": documento.upload_em.isoformat() if documento.upload_em else None
+        }
+    }
 
 
 # ==========================================
