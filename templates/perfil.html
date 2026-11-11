@@ -317,7 +317,7 @@
                         <h3>Assinatura Pro Ativa</h3>
                         <p>Você tem acesso ilimitado à geração de croquis DXF, memoriais descritivos e storage avançado.</p>
                     {% else %}
-                        <h3>Plano Free (2 projetos/mês)</h3>
+                        <h3>Plano Free (3 projetos/mês)</h3>
                         <p>Faça o upgrade para o Plano Pro por R$ 149,90/mês e desbloqueie geração ilimitada de croquis DXF sem marca d'água.</p>
                     {% endif %}
                 </div>
@@ -358,7 +358,7 @@
             if (msg === 'limite_atingido') {
                 box.style.backgroundColor = '#C53030';
                 box.style.color = '#FFFFFF';
-                box.innerHTML = '⚠️ Limite do Plano Free atingido (máx. 2 projetos). Assine o Plano Pro para criar projetos ilimitados.';
+                box.innerHTML = '⚠️ Limite do Plano Free atingido (máx. 3 projetos). Assine o Plano Pro para criar projetos ilimitados.';
             } else if (msg === 'assinatura_cancelada') {
                 box.style.backgroundColor = '#D69E2E';
                 box.style.color = '#000000';

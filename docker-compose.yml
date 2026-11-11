@@ -1,86 +1,12 @@
 version: '3.8'
 
 services:
-  db:
-    image: mariadb:latest
-    container_name: nexatopo_db
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: nexatopo_db
-    volumes:
-      - db_data_m:/var/lib/mysql
-
-  redis:
-    image: redis:alpine
-    container_name: nexatopo_redis
-
-  log-service:
-    build: ./log_service
-    container_name: nexatopo_log_service
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    depends_on:
-      - redis
-
-  minio:
-    image: ghcr.io/coollabsio/minio:latest
-    container_name: nexatopo_minio
-    environment:
-      - MINIO_ROOT_USER=${MINIO_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_PASSWORD}
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio_data_m:/data
-
-  auth-service:
-    build: ./auth_service
-    container_name: nexatopo_auth_service
-    volumes:
-      - ./auth_service:/app
-    environment:
-      - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=nexatopo_db
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASS=${SMTP_PASS}
-      - SMTP_FROM=${SMTP_FROM}
-      - LOG_URL=http://log-service:4000
-    depends_on:
-      - db
-      - log-service
-
-  app:
+  web:
     build: .
-    container_name: nexatopo_app
-    volumes:
-      - .:/app
+    container_name: nexatopo_web
+    restart: unless-stopped
     ports:
-      - "8221:8000"
-    environment:
-      - AUTH_URL=http://auth-service:3000
-      - LOG_URL=http://log-service:4000
-      - TMDB_API_KEY=${TMDB_API_KEY}
-      - SECRET_KEY=${SECRET_KEY}
-      - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=nexatopo_db
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASS=${SMTP_PASS}
-      - MINIO_ENDPOINT=minio:9000 
-      - MINIO_ACCESS_KEY=${MINIO_USER}
-      - MINIO_SECRET_KEY=${MINIO_PASSWORD}
-      - MINIO_BUCKET_NAME=documentos-nexatopo
-      - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-      - STRIPE_PRICE_ID=${STRIPE_PRICE_ID}
-    depends_on:
-      - auth-service
-      - db
-      - log-service
-
-volumes:
-  db_data_m:
-  minio_data_m:
+      - "8221:8221"
+    volumes:
+      - ./nexageo_config.db:/app/nexageo_config.db
+      - ./uploads:/app/uploads

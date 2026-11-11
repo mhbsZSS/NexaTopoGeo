@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, ForeignKey, func, Text
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -46,6 +46,8 @@ class Projeto(Base):
     titulo = Column(String(255), nullable=False)
     status = Column(String(50), default="orcamento", nullable=False)  # orcamento, campo, desenho, cartorio, concluido
     area_hectares = Column(Float, nullable=True)
+    valor_orcamento = Column(Float, nullable=True)
+    perimetro = Column(Float, nullable=True)
     criado_em = Column(DateTime, default=func.now(), nullable=False)
 
     # Relacionamentos
@@ -81,7 +83,8 @@ class Vertice(Base):
     codigo_segmento_vante = Column(String(50), nullable=True)
     azimute = Column(String(50), nullable=True)
     distancia = Column(String(50), nullable=True)
-    confrontacao = Column(String(255), nullable=True)
+    confrontacao = Column(Text, nullable=True)
+    origem = Column(String(50), default="SIGEF")
 
     # Relacionamentos
     projeto = relationship("Projeto", back_populates="vertices")

@@ -7,6 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root {
             --cor-primaria: #2E472D;
@@ -488,9 +490,229 @@
             color: #166534;
             border: 1px solid #BBF7D0;
         }
+
+        /* BOTÃO DE EDIÇÃO DE DADOS */
+        .btn-editar-dados {
+            background-color: #F1F5F9;
+            color: var(--cor-texto);
+            border: 1px solid var(--cor-borda);
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.2s ease;
+            margin-left: 0.5rem;
+        }
+
+        .btn-editar-dados:hover {
+            background-color: var(--cor-primaria-clara);
+            color: var(--cor-primaria);
+            border-color: var(--cor-primaria);
+        }
+
+        /* MODAL DE EDIÇÃO DE DADOS */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(3px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .modal-card {
+            background-color: var(--cor-card);
+            border: 1px solid var(--cor-borda);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: modalFadeIn 0.2s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--cor-borda);
+        }
+
+        .modal-header h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--cor-primaria);
+        }
+
+        .btn-fechar {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--cor-texto-suave);
+            cursor: pointer;
+            line-height: 1;
+            padding: 0.25rem;
+            transition: color 0.2s;
+        }
+
+        .btn-fechar:hover {
+            color: #C53030;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--cor-texto);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid var(--cor-borda);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: var(--cor-texto);
+            background-color: #FAFAFA;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--cor-primaria);
+            background-color: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(46, 71, 45, 0.15);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 1.75rem;
+        }
+
+        .btn-cancelar {
+            background-color: #EDF2F7;
+            color: var(--cor-texto);
+            border: 1px solid var(--cor-borda);
+            padding: 0.7rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-cancelar:hover {
+            background-color: #E2E8F0;
+        }
+
+        .btn-confirmar {
+            background-color: var(--cor-primaria);
+            color: #FFFFFF;
+            border: none;
+            padding: 0.7rem 1.4rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-confirmar:hover {
+            background-color: var(--cor-hover);
+        }
+
+        /* TOAST NOTIFICAÇÕES FLUTUANTES */
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto;
+            background: #FFFFFF;
+            color: #1E293B;
+            min-width: 300px;
+            max-width: 420px;
+            padding: 14px 18px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--cor-borda);
+            border-left: 5px solid #2E472D;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateX(40px);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .toast.sucesso {
+            border-left-color: #2E472D;
+        }
+
+        .toast.erro {
+            border-left-color: #DC2626;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .toast-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            flex: 1;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
+
+    <!-- CONTAINER DOS TOASTS FLUTUANTES -->
+    <div id="toastContainer" class="toast-container"></div>
 
     <!-- BARRA DE NAVEGAÇÃO -->
     <header>
@@ -524,8 +746,16 @@
             const msg = urlParams.get('msg');
             if (msg === 'status_atualizado') {
                 document.write('<div class="alert alert-success">✓ Fase do projeto atualizada com sucesso!</div>');
+            } else if (msg === 'dados_atualizados') {
+                document.write('<div class="alert alert-success">✓ Dados do cliente e área atualizados com sucesso!</div>');
             } else if (msg === 'upload_sucesso') {
                 document.write('<div class="alert alert-success">✓ Documento anexado com sucesso!</div>');
+            } else if (msg === 'sigef_processado_sucesso') {
+                document.write('<div class="alert alert-success">✓ Planilha SIGEF processada com sucesso! Tabela de vértices atualizada.</div>');
+            } else if (msg === 'documento_excluido') {
+                document.write('<div class="alert alert-success">✓ Documento excluído com sucesso!</div>');
+            } else if (msg === 'erro_extracao_pdf') {
+                document.write('<div class="alert" style="background-color: #FEE2E2; color: #991B1B; border: 1px solid #FECACA;">⚠️ Não foi possível identificar as coordenadas no Memorial PDF. Verifique se o arquivo contém a tabela "DESCRIÇÃO DA PARCELA".</div>');
             }
         </script>
 
@@ -538,7 +768,14 @@
                     <span>•</span>
                     <span>Área: <strong>{{ "%.2f"|format(projeto.area_hectares) if projeto.area_hectares else 'N/A' }} ha</strong></span>
                     <span>•</span>
+                    <span>Perímetro: <strong>{{ "%.2f"|format(projeto.perimetro) if projeto.perimetro else 'N/A' }} m</strong></span>
+                    <span>•</span>
+                    <span>Valor: <strong>R$ {{ "%.2f"|format(projeto.valor_orcamento) if projeto.valor_orcamento else '0.00' }}</strong></span>
+                    <span>•</span>
                     <span>Fase Atual: <span class="phase-badge">{{ projeto.status }}</span></span>
+                    <button type="button" class="btn-editar-dados" onclick="abrirModalEditarDados()" title="Editar dados do projeto">
+                        ✏️ Editar Dados
+                    </button>
                 </div>
             </div>
 
@@ -565,10 +802,20 @@
                 <form id="uploadDocForm" action="/documentos/upload" method="POST" enctype="multipart/form-data" class="upload-form-box">
                     <input type="hidden" name="projeto_id" value="{{ projeto.id }}">
                     
+                    {% if projeto.status == 'campo' %}
+                    <div style="margin-bottom: 0.75rem;">
+                        <label for="tipo_documento" style="font-size: 0.85rem; font-weight: 600; color: var(--cor-texto-mutado); display: block; margin-bottom: 0.25rem;">Tipo do Documento:</label>
+                        <select name="tipo_documento" id="tipo_documento" class="form-input" style="padding: 0.45rem; font-size: 0.9rem; width: 100%; border: 1px solid var(--cor-borda); border-radius: var(--raio-borda);">
+                            <option value="dados_brutos" selected>🛰️ Dados Brutos RTK (.txt / .csv)</option>
+                            <option value="sigef_csv">📊 Planilha SIGEF (.csv / .xlsx)</option>
+                        </select>
+                    </div>
+                    {% endif %}
+
                     <div class="file-dropzone">
-                        <input type="file" name="file" id="fileInput" required accept=".csv,.xlsx,.dwg,.dxf,.pdf">
+                        <input type="file" name="file" id="fileInput" required accept=".csv,.xlsx,.dwg,.dxf,.pdf,.txt">
                         <div class="file-hints">
-                            Formatos suportados: <strong>.csv, .xlsx (SIGEF), .dwg, .dxf (CAD), .pdf</strong>
+                            Formatos suportados: <strong>.csv, .txt (RTK/SIGEF), .xlsx, .dwg, .dxf, .pdf</strong>
                         </div>
                     </div>
 
@@ -586,14 +833,21 @@
                         {% for doc in documentos %}
                             <li class="doc-item">
                                 <div class="doc-info">
-                                    <span class="doc-badge {{ 'csv' if 'csv' in doc.tipo else ('dxf' if 'dxf' in doc.tipo else 'pdf') }}">
+                                    <span class="doc-badge {{ 'csv' if ('csv' in doc.tipo or doc.tipo == 'dados_brutos') else ('dxf' if 'dxf' in doc.tipo else 'pdf') }}">
                                         {{ doc.tipo }}
                                     </span>
-                                    <span class="doc-name" title="{{ doc.nome_arquivo }}">{{ doc.nome_arquivo }}</span>
+                                    <a href="/documentos/{{ doc.id }}/download" class="doc-name" title="Baixar {{ doc.nome_arquivo }}" style="color: var(--cor-texto); font-weight: 600; text-decoration: none; cursor: pointer;">
+                                        {{ doc.nome_arquivo }} <span style="font-size: 0.75rem; color: var(--cor-primaria);">⬇️</span>
+                                    </a>
                                 </div>
-                                <span class="doc-date">
-                                    {{ doc.upload_em.strftime('%d/%m/%Y %H:%M') if doc.upload_em else '' }}
-                                </span>
+                                <div class="doc-actions" style="display:flex; align-items:center; gap:1rem;">
+                                    <span class="doc-date">
+                                        {{ doc.upload_em.strftime('%d/%m/%Y %H:%M') if doc.upload_em else '' }}
+                                    </span>
+                                    <form id="form-excluir-{{ doc.id }}" action="/documentos/{{ doc.id }}/excluir" method="POST" style="margin:0;">
+                                        <button type="button" onclick="abrirModalExclusao('form-excluir-{{ doc.id }}')" style="background:none; border:none; color:#DC2626; cursor:pointer; font-size:1.1rem; padding:0.2rem;" title="Excluir arquivo">🗑️</button>
+                                    </form>
+                                </div>
                             </li>
                         {% endfor %}
                     </ul>
@@ -609,21 +863,43 @@
         <!-- SEÇÃO TABELA SIGEF & AÇÕES RÁPIDAS -->
         <div class="sigef-section">
             <div class="sigef-header">
-                <h2 class="panel-title" style="border: none; padding: 0;">🌐 Tabela de Vértices - Padrão SIGEF/INCRA</h2>
+                <h2 class="panel-title" style="border: none; padding: 0;">🌐 Tabela de Vértices - Padrão SIGEF/INCRA / RTK Campo</h2>
                 
                 <!-- AÇÕES RÁPIDAS -->
                 <div class="quick-actions-bar">
-                    <button type="button" class="btn btn-secondary" onclick="alert('Processamento de Planilha SIGEF em desenvolvimento')">
-                        📊 Processar Planilha SIGEF
+                    {% if projeto.status in ['campo'] %}
+                    <button type="button" id="btnProcessarRTK" class="btn btn-secondary" onclick="processarRTK()">
+                        🛰️ Processar Dados RTK
                     </button>
+                    {% endif %}
+
+                    {% if projeto.status in ['campo', 'desenho', 'cartorio', 'concluido'] %}
                     <button type="button" id="btnGerarCroqui" class="btn btn-secondary" onclick="acionarGerarCroqui()">
                         📐 Gerar Croqui DXF
                     </button>
-                    <button type="button" class="btn btn-secondary" onclick="alert('Geração de Memorial Descritivo em desenvolvimento')">
+                    {% endif %}
+
+                    <button type="button" id="btnVisualizarMapa" class="btn btn-primary" onclick="carregarMapa()">
+                        🗺️ Visualização Rápida
+                    </button>
+
+                    {% if projeto.status in ['campo', 'desenho', 'cartorio', 'concluido'] %}
+                    <button type="button" id="btnProcessarSigef" class="btn btn-secondary" onclick="processarSigef()">
+                        📊 Processar Planilha SIGEF
+                    </button>
+                    {% endif %}
+
+                    {% if projeto.status in ['cartorio', 'concluido'] %}
+                    <input type="file" id="inputModeloMemorial" accept=".docx" style="display: none;" onchange="enviarModeloMemorial(this)">
+                    <button type="button" id="btnGerarMemorial" class="btn btn-secondary" onclick="document.getElementById('inputModeloMemorial').click()">
                         📄 Gerar Memorial Descritivo
                     </button>
+                    {% endif %}
                 </div>
             </div>
+
+            <!-- CONTAINER MAPA LEAFLET -->
+            <div id="mapa-croqui" style="width: 100%; height: 400px; border-radius: 8px; margin-bottom: 20px; display: none;"></div>
 
             <!-- TABELA SIGEF -->
             <div class="table-responsive">
@@ -635,19 +911,24 @@
                         </tr>
                         <tr>
                             <th class="column-header">Código</th>
-                            <th class="column-header">Longitude</th>
-                            <th class="column-header">Latitude</th>
-                            <th class="column-header">Altitude (m)</th>
+                            <th class="column-header">Longitude / Este</th>
+                            <th class="column-header">Latitude / Norte</th>
+                            <th class="column-header">Altitude / Cota (m)</th>
                             <th class="column-header">Código Vante</th>
                             <th class="column-header">Azimute</th>
                             <th class="column-header">Distância (m)</th>
-                            <th class="column-header">Confrontações</th>
+                            <th class="column-header">Confrontações / Descrição</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for vertice in vertices %}
                             <tr>
-                                <td><strong>{{ vertice.codigo_vertice or '-' }}</strong></td>
+                                <td>
+                                    <strong>{{ vertice.codigo_vertice or '-' }}</strong>
+                                    {% if vertice.origem == 'RTK' %}
+                                        <span style="font-size:0.65rem; background:#DBEAFE; color:#1E40AF; padding:2px 5px; border-radius:4px; margin-left:4px; font-weight:700;">RTK</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ vertice.longitude or '-' }}</td>
                                 <td>{{ vertice.latitude or '-' }}</td>
                                 <td>{{ vertice.altitude or '-' }}</td>
@@ -659,7 +940,7 @@
                         {% else %}
                             <tr class="table-empty-row">
                                 <td colspan="8">
-                                    Nenhum dado processado. Faça o upload da planilha SIGEF/CSV para popular a tabela.
+                                    Nenhum dado processado. Faça o upload dos dados brutos RTK (.txt/.csv) ou planilha SIGEF para popular a tabela.
                                 </td>
                             </tr>
                         {% endfor %}
@@ -671,6 +952,128 @@
 
     <!-- SCRIPTS DE INTERATIVIDADE -->
     <script>
+        // Função Toast moderna para notificações flutuantes
+        function mostrarNotificacao(mensagem, tipo = 'sucesso') {
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+            const icone = tipo === 'sucesso' ? '✓' : '⚠️';
+            toast.innerHTML = `
+                <span class="toast-icon" style="color: ${tipo === 'sucesso' ? '#2E472D' : '#DC2626'}; font-weight: 800;">${icone}</span>
+                <div class="toast-content">${mensagem}</div>
+            `;
+
+            container.appendChild(toast);
+
+            // Animação de entrada
+            requestAnimationFrame(() => {
+                toast.classList.add('show');
+            });
+
+            // Desaparece automaticamente após 3.5 segundos
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 350);
+            }, 3500);
+        }
+
+        // Exibe mensagens flash originadas de redirects
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const msg = urlParams.get('msg');
+            if (msg === 'status_atualizado') {
+                mostrarNotificacao('✓ Fase do projeto atualizada com sucesso!', 'sucesso');
+            } else if (msg === 'dados_atualizados') {
+                mostrarNotificacao('✓ Dados do projeto atualizados com sucesso!', 'sucesso');
+            } else if (msg === 'upload_sucesso') {
+                mostrarNotificacao('✓ Documento anexado com sucesso!', 'sucesso');
+            } else if (msg === 'sigef_processado_sucesso') {
+                mostrarNotificacao('✓ Planilha SIGEF processada com sucesso! Vértices atualizados.', 'sucesso');
+            } else if (msg === 'rtk_processado_sucesso') {
+                mostrarNotificacao('✓ Dados brutos RTK processados com sucesso! Poligonal pronta para pré-visualização no Croqui.', 'sucesso');
+            } else if (msg === 'croqui_gerado') {
+                mostrarNotificacao('Croqui DXF gerado com sucesso!', 'sucesso');
+            } else if (msg === 'documento_excluido') {
+                mostrarNotificacao('✓ Documento excluído com sucesso!', 'sucesso');
+            } else if (msg === 'erro_extracao_pdf') {
+                mostrarNotificacao('⚠️ Não foi possível identificar as coordenadas no Memorial PDF.', 'erro');
+            }
+        });
+
+        // Disparo assíncrono para processar dados brutos RTK
+        async function processarRTK() {
+            const btn = document.getElementById('btnProcessarRTK');
+            const textoOriginal = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Processando RTK...';
+            }
+
+            try {
+                const response = await fetch('/projetos/{{ projeto.id }}/processar-rtk', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (response.ok) {
+                    mostrarNotificacao(data.mensagem || 'Dados brutos RTK processados com sucesso!', 'sucesso');
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '/projetos/{{ projeto.id }}?msg=rtk_processado_sucesso';
+                    }, 1200);
+                } else {
+                    mostrarNotificacao('Falha ao processar RTK: ' + (data.detail || data.mensagem || 'Erro desconhecido.'), 'erro');
+                }
+            } catch (err) {
+                mostrarNotificacao('Erro de conexão ao processar dados RTK.', 'erro');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = textoOriginal;
+                }
+            }
+        }
+
+        // Disparo assíncrono para processar a planilha SIGEF
+        async function processarSigef() {
+            const btn = document.getElementById('btnProcessarSigef');
+            const textoOriginal = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerText = 'Processando SIGEF...';
+
+            try {
+                const response = await fetch('/projetos/{{ projeto.id }}/processar-sigef', {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    window.location.href = '/projetos/{{ projeto.id }}?msg=sigef_processado_sucesso';
+                } else {
+                    const data = await response.json().catch(() => ({}));
+                    mostrarNotificacao('Falha ao processar SIGEF: ' + (data.detail || data.mensagem || 'Erro desconhecido.'), 'erro');
+                }
+            } catch (err) {
+                mostrarNotificacao('Erro de conexão ao processar planilha SIGEF.', 'erro');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = textoOriginal;
+            }
+        }
+
         // Disparo assíncrono para a rota de geração de croqui
         async function acionarGerarCroqui() {
             const btn = document.getElementById('btnGerarCroqui');
@@ -683,20 +1086,301 @@
                 });
 
                 if (response.ok) {
-                    alert('Croqui DXF gerado com sucesso e anexado aos documentos!');
-                    window.location.reload();
+                    mostrarNotificacao('Croqui DXF gerado com sucesso!', 'sucesso');
+                    setTimeout(() => window.location.reload(), 1500);
                 } else {
                     const data = await response.json().catch(() => ({}));
-                    alert('Falha ao gerar croqui: ' + (data.detail || 'Erro desconhecido.'));
+                    mostrarNotificacao('Falha ao gerar croqui: ' + (data.detail || 'Erro desconhecido.'), 'erro');
                 }
             } catch (err) {
-                alert('Erro de conexão ao gerar o croqui DXF.');
+                mostrarNotificacao('Erro de conexão ao gerar o croqui DXF.', 'erro');
             } finally {
                 btn.disabled = false;
                 btn.innerText = '📐 Gerar Croqui DXF';
             }
         }
+
+        // Visualização Rápida em Mapa Interativo (Leaflet)
+        let mapaInstancia = null;
+
+        async function carregarMapa() {
+            const containerMapa = document.getElementById('mapa-croqui');
+            const btn = document.getElementById('btnVisualizarMapa');
+            const textoOriginal = btn ? btn.innerHTML : '🗺️ Visualização Rápida';
+
+            if (!containerMapa) return;
+
+            // Torna o container do mapa visível imediatamente
+            containerMapa.style.display = 'block';
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Carregando Mapa...';
+            }
+
+            // Garante URL limpa e absoluta sem carregar query strings da página (ex: ?msg=...)
+            const urlCoordenadas = `/projetos/{{ projeto.id }}/coordenadas`;
+
+            fetch(urlCoordenadas)
+                .then(async (response) => {
+                    if (!response.ok) {
+                        const erroDetalhe = await response.json().catch(() => ({}));
+                        const statusErro = response.status;
+                        const msgErro = erroDetalhe.detail || erroDetalhe.mensagem || response.statusText || 'Erro desconhecido';
+                        console.error(`[ERRO MAPA ${statusErro}]`, msgErro);
+                        throw new Error(`[Status ${statusErro}] ${msgErro}`);
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    const pontos = data.pontos || [];
+
+                    if (!pontos || pontos.length === 0) {
+                        console.warn("[AVISO MAPA] Nenhum vértice com coordenadas retornado.");
+                        mostrarNotificacao('Nenhum vértice com coordenadas encontrado para este projeto.', 'erro');
+                        return;
+                    }
+
+                    // Destrói instância prévia para evitar erro 'Map container is already initialized'
+                    if (mapaInstancia) {
+                        mapaInstancia.remove();
+                        mapaInstancia = null;
+                    }
+
+                    // Inicializa o mapa Leaflet com camada OpenStreetMap
+                    mapaInstancia = L.map('mapa-croqui');
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '© OpenStreetMap'
+                    }).addTo(mapaInstancia);
+
+                    // Extrai array com coordenadas [lat, lng] numéricas
+                    const latlngs = [];
+                    pontos.forEach(p => {
+                        const lat = parseFloat(p.lat);
+                        const lng = parseFloat(p.lng);
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                            latlngs.push([lat, lng]);
+
+                            // Adiciona marcadores circulares para cada vértice com popup
+                            L.circleMarker([lat, lng], {
+                                radius: 6,
+                                color: '#1E40AF',
+                                fillColor: '#3B82F6',
+                                fillOpacity: 0.9,
+                                weight: 2
+                            })
+                            .addTo(mapaInstancia)
+                            .bindPopup(`<strong>Vértice:</strong> ${p.nome || '-'}<br><strong>Descrição:</strong> ${p.desc || '-'}`);
+                        }
+                    });
+
+                    if (latlngs.length === 0) {
+                        console.warn("[AVISO MAPA] Nenhuma coordenada numérica válida para polígono.");
+                        mostrarNotificacao('Coordenadas numéricas inválidas para exibição no mapa.', 'erro');
+                        return;
+                    }
+
+                    // Desenha a poligonal do imóvel
+                    const poligono = L.polygon(latlngs, {
+                        color: 'red',
+                        fillColor: '#f03',
+                        fillOpacity: 0.35,
+                        weight: 3
+                    }).addTo(mapaInstancia);
+
+                    // Centraliza a câmera perfeitamente na poligonal da fazenda
+                    mapaInstancia.fitBounds(poligono.getBounds(), { padding: [30, 30] });
+
+                    // Ajusta dimensões do mapa após o display: block para evitar tiles cinzas
+                    setTimeout(() => {
+                        if (mapaInstancia) {
+                            mapaInstancia.invalidateSize();
+                        }
+                    }, 200);
+
+                    // Scroll suave até o mapa
+                    containerMapa.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    mostrarNotificacao('Poligonal carregada no mapa interativo!', 'sucesso');
+                })
+                .catch((err) => {
+                    console.error("[FALHA FETCH COORDENADAS]", err);
+                    mostrarNotificacao('Falha ao carregar coordenadas: ' + err.message, 'erro');
+                    if (err.message && err.message.includes('404')) {
+                        alert("Atenção: A rota de coordenadas retornou Erro 404 (/projetos/{{ projeto.id }}/coordenadas). Verifique se o contêiner da aplicação está atualizado.");
+                    }
+                })
+                .finally(() => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = textoOriginal;
+                    }
+                });
+        }
+
+        // Upload e Geração Dinâmica do Memorial Descritivo (docxtpl)
+        async function enviarModeloMemorial(input) {
+            if (!input.files || input.files.length === 0) return;
+
+            const file = input.files[0];
+            if (!file.name.toLowerCase().endsWith('.docx')) {
+                mostrarNotificacao('Por favor, selecione um arquivo de modelo Word (.docx)', 'erro');
+                input.value = '';
+                return;
+            }
+
+            const btn = document.getElementById('btnGerarMemorial');
+            const textoOriginal = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Gerando Memorial...';
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/projetos/{{ projeto.id }}/gerar-memorial', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    mostrarNotificacao('✓ ' + (data.mensagem || 'Memorial Descritivo gerado com sucesso!'), 'sucesso');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    const data = await response.json().catch(() => ({}));
+                    mostrarNotificacao('Falha ao gerar memorial: ' + (data.detail || 'Erro desconhecido.'), 'erro');
+                }
+            } catch (err) {
+                mostrarNotificacao('Erro de conexão ao gerar o Memorial Descritivo.', 'erro');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = textoOriginal;
+                }
+                input.value = '';
+            }
+        }
+
+        // Funções de controle do Modal de Edição de Dados
+        function abrirModalEditarDados() {
+            document.getElementById('modal-editar-dados').style.display = 'flex';
+            document.getElementById('projeto_titulo').focus();
+        }
+
+        function fecharModalEditarDados() {
+            document.getElementById('modal-editar-dados').style.display = 'none';
+        }
+
+        function fecharModalEditarSeBackdrop(event) {
+            if (event.target.id === 'modal-editar-dados') {
+                fecharModalEditarDados();
+            }
+        }
+
+        // Funções de controle do Modal de Exclusão de Documento
+        let formExclusaoPendenteId = null;
+
+        function abrirModalExclusao(formId) {
+            formExclusaoPendenteId = formId;
+            const modal = document.getElementById('modalExclusaoDocumento');
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+
+        function fecharModalExclusao() {
+            formExclusaoPendenteId = null;
+            const modal = document.getElementById('modalExclusaoDocumento');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function fecharModalExclusaoSeBackdrop(event) {
+            if (event.target.id === 'modalExclusaoDocumento') {
+                fecharModalExclusao();
+            }
+        }
+
+        function confirmarExclusaoDoc() {
+            if (formExclusaoPendenteId) {
+                const form = document.getElementById(formExclusaoPendenteId);
+                if (form) {
+                    form.submit();
+                }
+            }
+        }
+
+        // Fechar modais ao pressionar ESC
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                fecharModalEditarDados();
+                fecharModalExclusao();
+            }
+        });
     </script>
+
+    <!-- MODAL DE EXCLUSÃO DE DOCUMENTO -->
+    <div id="modalExclusaoDocumento" class="modal-overlay" style="display:none;" onclick="fecharModalExclusaoSeBackdrop(event)">
+        <div class="modal-card" style="max-width: 440px; text-align: center;">
+            <div class="modal-header" style="justify-content: space-between; border-bottom: 1px solid var(--cor-borda); margin-bottom: 1rem;">
+                <h2 style="font-size: 1.25rem; color: var(--cor-primaria);">Excluir Arquivo</h2>
+                <button type="button" class="btn-fechar" onclick="fecharModalExclusao()">&times;</button>
+            </div>
+            <p style="font-size: 0.95rem; color: var(--cor-texto-suave); margin-bottom: 1.75rem; line-height: 1.5;">
+                Tem a certeza que deseja excluir permanentemente este documento? Esta ação não pode ser desfeita.
+            </p>
+            <div class="modal-actions" style="justify-content: center; margin-top: 0; gap: 1rem;">
+                <button type="button" class="btn-cancelar" onclick="fecharModalExclusao()">Cancelar</button>
+                <button type="button" class="btn-confirmar" style="background-color: #DC2626;" onclick="confirmarExclusaoDoc()">Sim, Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE EDIÇÃO DE DADOS DO PROJETO -->
+    <div id="modal-editar-dados" class="modal-overlay" onclick="fecharModalEditarSeBackdrop(event)">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>Editar Dados do Projeto</h2>
+                <button type="button" class="btn-fechar" onclick="fecharModalEditarDados()">&times;</button>
+            </div>
+
+            <form action="/projetos/{{ projeto.id }}/atualizar-dados" method="POST">
+                <div class="form-group">
+                    <label for="projeto_titulo">Título do Projeto</label>
+                    <input type="text" id="projeto_titulo" name="projeto_titulo" value="{{ projeto.titulo }}" required placeholder="Ex: Fazenda Santa Maria - Gleba B">
+                </div>
+
+                <div class="form-group">
+                    <label for="cliente_nome">Nome do Cliente</label>
+                    <input type="text" id="cliente_nome" name="cliente_nome" value="{{ cliente.nome_razao if cliente else '' }}" required placeholder="Ex: Agropecuária São José Ltda">
+                </div>
+
+                <div class="form-group">
+                    <label for="area_hectares">Área (ha)</label>
+                    <input type="number" step="any" id="area_hectares" name="area_hectares" value="{{ projeto.area_hectares if projeto.area_hectares is not none else '' }}" placeholder="Ex: 37.90">
+                </div>
+
+                <div class="form-group">
+                    <label for="perimetro">Perímetro (m)</label>
+                    <input type="number" step="0.01" id="perimetro" name="perimetro" value="{{ projeto.perimetro if projeto.perimetro is not none else '' }}" placeholder="Ex: 2450.80">
+                </div>
+
+                <div class="form-group">
+                    <label for="valor_orcamento">Valor do Orçamento (R$)</label>
+                    <input type="number" step="0.01" id="valor_orcamento" name="valor_orcamento" value="{{ projeto.valor_orcamento if projeto.valor_orcamento is not none else '' }}" placeholder="Ex: 4500.00">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancelar" onclick="fecharModalEditarDados()">Cancelar</button>
+                    <button type="submit" class="btn-confirmar">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 </body>
 </html>

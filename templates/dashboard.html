@@ -569,7 +569,7 @@
                 </div>
                 <div class="cards-list">
                     {% for projeto in projetos_por_status['orcamento'] %}
-                        <div class="project-card">
+                        <div class="project-card" onclick="window.location.href='/projetos/{{ projeto.id }}'">
                             <h3 class="card-title"><a href="/projetos/{{ projeto.id }}" style="text-decoration: none; color: inherit;">{{ projeto.titulo }}</a></h3>
                             <div class="card-info">
                                 <div class="card-info-item">
@@ -595,7 +595,7 @@
                 </div>
                 <div class="cards-list">
                     {% for projeto in projetos_por_status['campo'] %}
-                        <div class="project-card">
+                        <div class="project-card" onclick="window.location.href='/projetos/{{ projeto.id }}'">
                             <h3 class="card-title"><a href="/projetos/{{ projeto.id }}" style="text-decoration: none; color: inherit;">{{ projeto.titulo }}</a></h3>
                             <div class="card-info">
                                 <div class="card-info-item">
@@ -621,7 +621,7 @@
                 </div>
                 <div class="cards-list">
                     {% for projeto in projetos_por_status['desenho'] %}
-                        <div class="project-card">
+                        <div class="project-card" onclick="window.location.href='/projetos/{{ projeto.id }}'">
                             <h3 class="card-title"><a href="/projetos/{{ projeto.id }}" style="text-decoration: none; color: inherit;">{{ projeto.titulo }}</a></h3>
                             <div class="card-info">
                                 <div class="card-info-item">
@@ -647,7 +647,7 @@
                 </div>
                 <div class="cards-list">
                     {% for projeto in projetos_por_status['cartorio'] %}
-                        <div class="project-card">
+                        <div class="project-card" onclick="window.location.href='/projetos/{{ projeto.id }}'">
                             <h3 class="card-title"><a href="/projetos/{{ projeto.id }}" style="text-decoration: none; color: inherit;">{{ projeto.titulo }}</a></h3>
                             <div class="card-info">
                                 <div class="card-info-item">
@@ -673,7 +673,7 @@
                 </div>
                 <div class="cards-list">
                     {% for projeto in projetos_por_status['concluido'] %}
-                        <div class="project-card">
+                        <div class="project-card" onclick="window.location.href='/projetos/{{ projeto.id }}'">
                             <h3 class="card-title"><a href="/projetos/{{ projeto.id }}" style="text-decoration: none; color: inherit;">{{ projeto.titulo }}</a></h3>
                             <div class="card-info">
                                 <div class="card-info-item">
@@ -744,26 +744,52 @@
             }
         });
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const msg = urlParams.get('msg');
-        const box = document.getElementById('notificacao');
-
-        if (msg) {
-            box.style.display = 'block';
-
-            if (msg === 'projeto_criado') {
-                box.style.backgroundColor = '#2E472D';
-                box.style.color = '#FFFFFF';
-                box.innerHTML = '✅ Projeto criado com sucesso!';
-            } else if (msg === 'assinatura_sucesso') {
-                box.style.backgroundColor = '#2E472D';
-                box.style.color = '#FFFFFF';
-                box.innerHTML = '🎉 Assinatura Pro ativada com sucesso! Aproveite todos os recursos ilimitados.';
-            }
+        // Função Toast para notificações flutuantes no Dashboard
+        function mostrarNotificacao(mensagem, tipo = 'sucesso') {
+            const toast = document.createElement('div');
+            toast.innerHTML = mensagem;
+            toast.style.position = 'fixed';
+            toast.style.top = '20px';
+            toast.style.right = '20px';
+            toast.style.backgroundColor = (tipo === 'erro' || tipo === 'danger') ? '#C53030' : '#2E472D';
+            toast.style.color = '#FFFFFF';
+            toast.style.padding = '14px 20px';
+            toast.style.borderRadius = '8px';
+            toast.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.2)';
+            toast.style.fontSize = '0.9rem';
+            toast.style.fontWeight = '600';
+            toast.style.zIndex = '9999';
+            toast.style.maxWidth = '380px';
+            toast.style.lineHeight = '1.4';
+            toast.style.transition = 'all 0.3s ease';
+            document.body.appendChild(toast);
 
             setTimeout(() => {
-                box.style.display = 'none';
-            }, 6000);
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }, 5000);
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const msg = urlParams.get('msg');
+
+        if (msg === 'limite_projetos') {
+            if (typeof mostrarNotificacao === 'function') {
+                mostrarNotificacao("⚠️ Limite de 3 projetos atingido! Vá ao seu Perfil e assine o Plano Pro para criar projetos ilimitados.", "erro");
+            } else {
+                alert("⚠️ Limite de 3 projetos atingido! Vá ao seu Perfil e assine o Plano Pro para criar projetos ilimitados.");
+            }
+        } else if (msg === 'projeto_criado') {
+            mostrarNotificacao("✅ Projeto criado com sucesso!", "sucesso");
+        } else if (msg === 'assinatura_sucesso') {
+            mostrarNotificacao("🎉 Assinatura Pro ativada com sucesso! Aproveite todos os recursos ilimitados.", "sucesso");
+        } else if (msg === 'rtk_processado_sucesso') {
+            mostrarNotificacao("🛰️ Dados brutos RTK processados com sucesso!", "sucesso");
         }
     </script>
 </body>
