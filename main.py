@@ -31,6 +31,34 @@ from email.mime.multipart import MIMEMultipart
 models.Base.metadata.create_all(bind=engine)
 
 # ==========================================
+# SEED: CRIAÇÃO DO SUPER ADMIN AUTOMÁTICA
+# ==========================================
+def criar_admin_padrao():
+    from sqlalchemy.orm import Session
+    with Session(engine) as db:
+        # Verifica se já existe algum utilizador com privilégios de admin
+        admin_existente = db.query(models.Usuario).filter(models.Usuario.role == "admin").first()
+        
+        if not admin_existente:
+            salt = bcrypt.gensalt()
+            # Senha padrão inicial (pode ser alterada depois no banco)
+            senha_hash = bcrypt.hashpw("Admin@2026".encode('utf-8'), salt).decode('utf-8')
+            
+            novo_admin = models.Usuario(
+                nome="Super Admin",
+                email="admin@nexatopogeo.com.br",
+                senha_hash=senha_hash,
+                role="admin",
+                is_premium=True  # Libera a trava de 3 projetos
+            )
+            db.add(novo_admin)
+            db.commit()
+            print("[SISTEMA] Conta Super Admin criada com sucesso!")
+
+# Executa a verificação sempre que a aplicação inicia
+criar_admin_padrao()
+
+# ==========================================
 # CONFIGURAÇÃO DO MINIO (OBJECT STORAGE)
 # ==========================================
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
