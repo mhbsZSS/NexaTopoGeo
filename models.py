@@ -3,26 +3,9 @@ from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
 
-
 class Usuario(Base):
     __tablename__ = "usuarios"
-
-    id = Column(Integer, primary_key=True, index=True)
-    nome = Column(String(255), nullable=False)
-    email = Column(String(255), unique=True, index=True, nullable=False)
-    senha_hash = Column(String(255), nullable=False)
-    role = Column(String(50), default="usuario", nullable=False)
-    is_premium = Column(Boolean, default=False, server_default="0", nullable=False)
-    stripe_customer_id = Column(String(255), nullable=True)
-    avatar_url = Column(String(500), nullable=True)
-    bio = Column(String(500), nullable=True)
-
-    # Relacionamentos
-    clientes = relationship("Cliente", back_populates="usuario")
-    projetos = relationship("Projeto", back_populates="tecnico", foreign_keys="Projeto.usuario_id_tecnico")
-
-class Usuario(Base):
-    __tablename__ = "usuarios"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String(255), nullable=False)
@@ -44,6 +27,7 @@ class Usuario(Base):
 
 class Cliente(Base):
     __tablename__ = "clientes"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
@@ -59,6 +43,7 @@ class Cliente(Base):
 
 class Projeto(Base):
     __tablename__ = "projetos"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=False)
@@ -79,6 +64,7 @@ class Projeto(Base):
 
 class Documento(Base):
     __tablename__ = "documentos"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     projeto_id = Column(Integer, ForeignKey("projetos.id"), nullable=False)
@@ -93,6 +79,7 @@ class Documento(Base):
 
 class Vertice(Base):
     __tablename__ = "vertices"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     projeto_id = Column(Integer, ForeignKey("projetos.id"), nullable=False)
@@ -112,6 +99,7 @@ class Vertice(Base):
 # --- NOVA CLASSE ADICIONADA NO FINAL DO ARQUIVO ---
 class LogAuditoria(Base):
     __tablename__ = "logs_auditoria"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(String(50))
