@@ -239,7 +239,7 @@
             <tbody>
                 {% for log in logs %}
                 <tr>
-                    <td>{{ log.timestamp[:19].replace('T', ' ') }}</td>
+                    <td>{{ log.data_hora }}</td>
                     <td><strong>{{ log.nome_usuario }}</strong></td>
                     <td>
                         <span class="tag-acao {% if '403' in log.acao %}tag-403{% endif %}">
