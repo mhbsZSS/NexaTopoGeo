@@ -132,19 +132,27 @@ def cadastrar_usuario(request: Request, nome: str = Form(...), email: str = Form
         return RedirectResponse(url="/cadastrar?msg=erro_offline", status_code=303)
 
 @app.post("/login")
-def realizar_login(request: Request, email: str = Form(...), senha: str = Form(...)):
+def realizar_login(request: Request, email: str = Form(...), senha: str = Form(...), db: Session = Depends(get_db)):
     try:
-        resposta = requests.post(f"{AUTH_URL}/login", json={"email": email, "senha": senha}, timeout=10)
-        if resposta.status_code == 200:
-            dados = resposta.json()
-            request.session["usuario_id"] = dados["usuario_id"]
-            request.session["role"] = dados["role"] 
-            return RedirectResponse(url="/dashboard", status_code=303)
+        # Busca o usuário no banco de dados pelo email
+        usuario = db.query(Usuario).filter(Usuario.email == email).first()
         
-        print(f"[DEBUG AUTH] Erro no login: {resposta.text}")
-        return RedirectResponse(url="/login?msg=erro_login", status_code=303)
-    except requests.exceptions.RequestException as e:
-        print(f"[DEBUG AUTH] Erro de rede no login: {e}")
+        # Se não encontrar o usuário, ou se a senha não bater (usando bcrypt para verificar)
+        if not usuario or not bcrypt.checkpw(senha.encode('utf-8'), usuario.senha_hash.encode('utf-8')):
+            return RedirectResponse(url="/login?msg=erro_login", status_code=303)
+        
+        # Sucesso! Grava a sessão do usuário
+        request.session["usuario_id"] = usuario.id
+        request.session["role"] = usuario.role
+        request.session["nome_usuario"] = usuario.nome
+        
+        # Opcional: dispara o log de auditoria
+        disparar_log_auditoria(request, usuario.id, "login_sucesso")
+        
+        return RedirectResponse(url="/dashboard", status_code=303)
+        
+    except Exception as e:
+        print(f"[DEBUG AUTH] Erro ao realizar login no BD: {e}")
         return RedirectResponse(url="/login?msg=erro_offline", status_code=303)
 
 @app.post("/esqueci-senha")
