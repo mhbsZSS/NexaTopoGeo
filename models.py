@@ -21,6 +21,26 @@ class Usuario(Base):
     clientes = relationship("Cliente", back_populates="usuario")
     projetos = relationship("Projeto", back_populates="tecnico", foreign_keys="Projeto.usuario_id_tecnico")
 
+class Usuario(Base):
+    __tablename__ = "usuarios"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String(255), nullable=False)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    senha_hash = Column(String(255), nullable=False)
+    role = Column(String(50), default="usuario", nullable=False)
+    is_premium = Column(Boolean, default=False, server_default="0", nullable=False)
+    stripe_customer_id = Column(String(255), nullable=True)
+    avatar_url = Column(String(500), nullable=True)
+    bio = Column(String(500), nullable=True)
+    
+    # --- NOVA COLUNA ADICIONADA AQUI ---
+    reset_token = Column(String(100), nullable=True)
+
+    # Relacionamentos
+    clientes = relationship("Cliente", back_populates="usuario")
+    projetos = relationship("Projeto", back_populates="tecnico", foreign_keys="Projeto.usuario_id_tecnico")
+
 
 class Cliente(Base):
     __tablename__ = "clientes"
@@ -89,4 +109,12 @@ class Vertice(Base):
     # Relacionamentos
     projeto = relationship("Projeto", back_populates="vertices")
 
-
+# --- NOVA CLASSE ADICIONADA NO FINAL DO ARQUIVO ---
+class LogAuditoria(Base):
+    __tablename__ = "logs_auditoria"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(String(50))
+    acao = Column(String(255))
+    ip_origem = Column(String(50))
+    data_hora = Column(DateTime(timezone=True), server_default=func.now())

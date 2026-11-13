@@ -24,6 +24,9 @@ import stripe
 from database import engine
 import models
 import bcrypt
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -56,6 +59,8 @@ app = FastAPI(title="NexaTopoGeo App")
 try:
     with engine.connect() as conn:
         conn.execute(text("ALTER TABLE vertices ADD COLUMN IF NOT EXISTS origem VARCHAR(50) DEFAULT 'SIGEF'"))
+        # Nova migração para o token de password
+        conn.execute(text("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_token VARCHAR(100) DEFAULT NULL"))
         conn.commit()
 except Exception as e:
     print(f"[DB AUTO-MIGRATION] Falha ou coluna já existente: {e}")
@@ -68,21 +73,60 @@ templates = Jinja2Templates(directory="templates")
 # ==========================================
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_PRICE_ID = os.getenv("STRIPE_PRICE_ID")
-# Esta chave secreta do webhook nós vamos pegar no Stripe mais tarde!
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
-# Endereço interno do microsserviço (definido no docker-compose.yml)
-AUTH_URL = "http://auth-service:3000"
-LOG_URL = os.getenv("LOG_URL", "http://log-service:4000")
+# ==========================================
+# CONFIGURAÇÃO DE EMAIL (BREVO SMTP)
+# ==========================================
+def enviar_email_brevo(destinatario, assunto, link):
+    smtp_server = "smtp-relay.brevo.com"
+    smtp_port = 587
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_pass = os.getenv("SMTP_PASS")
 
+    msg = MIMEMultipart("alternative")
+    msg['Subject'] = assunto
+    # ATENÇÃO: Substitua pelo email que validou na sua conta do Brevo!
+    msg['From'] = "nao-responda@nexatopogeo.com.br" 
+    msg['To'] = destinatario
+
+    html = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>Recuperação de Senha - NexaTopoGeo</h2>
+        <p>Recebemos um pedido para redefinir a sua senha.</p>
+        <p>Clique no botão abaixo para criar uma nova senha:</p>
+        <a href="{link}" style="background-color: #2b5c3a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Redefinir Minha Senha</a>
+        <p><br>Se não pediu isto, pode ignorar este email em segurança.</p>
+      </body>
+    </html>
+    """
+    msg.attach(MIMEText(html, 'html'))
+
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.sendmail(msg['From'], [msg['To']], msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Erro ao enviar email pelo Brevo: {e}")
+        return False
+    
+# --- FUNÇÃO DE AUDITORIA ---
 # --- FUNÇÃO DE AUDITORIA ---
 def disparar_log_auditoria(request: Request, usuario_id: int, acao: str):
     try:
         ip = request.client.host if request.client else "Desconhecido"
-        payload = {"usuario_id": str(usuario_id), "acao": acao, "ip_origem": ip}
-        requests.post(f"{LOG_URL}/log", json=payload, timeout=2)
+        with engine.connect() as conn:
+            conn.execute(
+                text("INSERT INTO logs_auditoria (usuario_id, acao, ip_origem) VALUES (:uid, :acao, :ip)"),
+                {"uid": str(usuario_id), "acao": acao, "ip": ip}
+            )
+            conn.commit()
     except Exception as e:
-        print(f"Aviso: Falha ao enviar log para auditoria - {e}")
+        print(f"Aviso: Falha ao gravar log no banco - {e}")
 
 @app.get("/", response_class=HTMLResponse)
 def landing_page(request: Request):
@@ -156,34 +200,40 @@ def realizar_login(request: Request, email: str = Form(...), senha: str = Form(.
         return RedirectResponse(url="/login?msg=erro_offline", status_code=303)
 
 @app.post("/esqueci-senha")
-def esqueci_senha(request: Request, email: str = Form(...)):
-    try:
-        resposta = requests.post(f"{AUTH_URL}/esqueci-senha", json={"email": email}, timeout=10)
-        if resposta.status_code == 200:
-            return RedirectResponse(url="/login?msg=email_enviado", status_code=303)
-        
-        print(f"[DEBUG AUTH] Erro no esqueci-senha: {resposta.text}")
-        return RedirectResponse(url="/login?msg=email_enviado", status_code=303)
-    except requests.exceptions.RequestException as e:
-        print(f"[DEBUG AUTH] Erro de rede no esqueci-senha: {e}")
-        return RedirectResponse(url="/login?msg=erro_offline", status_code=303)
+def esqueci_senha(request: Request, email: str = Form(...), db: Session = Depends(get_db)):
+    usuario = db.query(Usuario).filter(Usuario.email == email).first()
+    
+    if usuario:
+        token = uuid.uuid4().hex
+        usuario.reset_token = token
+        db.commit()
+
+        domain_url = str(request.base_url).rstrip("/")
+        link_reset = f"{domain_url}/nova-senha?token={token}"
+
+        enviar_email_brevo(email, "Redefinição de Senha - NexaTopoGeo", link_reset)
+
+    return RedirectResponse(url="/login?msg=email_enviado", status_code=303)
     
 @app.get("/nova-senha", response_class=HTMLResponse)
 def tela_nova_senha(request: Request, token: str):
     return templates.TemplateResponse(request=request, name="nova_senha.html", context={"token": token})
 
 @app.post("/resetar-senha")
-def resetar_senha(request: Request, token: str = Form(...), nova_senha: str = Form(...)):
-    try:
-        resposta = requests.post(f"{AUTH_URL}/resetar-senha", json={"token": token, "nova_senha": nova_senha}, timeout=10)
-        if resposta.status_code == 200:
-            return RedirectResponse(url="/login?msg=senha_alterada", status_code=303)
-        
-        print(f"[DEBUG AUTH] Erro no resetar-senha: {resposta.text}")
+def resetar_senha(request: Request, token: str = Form(...), nova_senha: str = Form(...), db: Session = Depends(get_db)):
+    usuario = db.query(Usuario).filter(Usuario.reset_token == token).first()
+    
+    if not usuario:
         return RedirectResponse(url="/login?msg=token_invalido", status_code=303)
-    except requests.exceptions.RequestException as e:
-        print(f"[DEBUG AUTH] Erro de rede no resetar-senha: {e}")
-        return RedirectResponse(url="/login?msg=erro_offline", status_code=303)
+
+    salt = bcrypt.gensalt()
+    senha_hash = bcrypt.hashpw(nova_senha.encode('utf-8'), salt).decode('utf-8')
+
+    usuario.senha_hash = senha_hash
+    usuario.reset_token = None
+    db.commit()
+
+    return RedirectResponse(url="/login?msg=senha_alterada", status_code=303)
             
 @app.get("/logout")
 def sair(request: Request):
@@ -932,56 +982,39 @@ def painel_auditoria(request: Request, db: Session = Depends(get_db)):
     usuario_id = request.session.get("usuario_id")
     role = request.session.get("role")
 
-    # 1. Verifica se está logado
     if not usuario_id:
         return RedirectResponse(url="/login", status_code=303)
         
-    # ==========================================
-    # 2. ENFORCEMENT RBAC (Exclusivo Admin)
-    # ==========================================
     if role != "admin":
         disparar_log_auditoria(request, usuario_id, "tentativa_acesso_painel_auditoria_403")
-        raise HTTPException(
-            status_code=403, 
-            detail="Acesso negado: Rota exclusiva para administradores do sistema."
-        )
+        raise HTTPException(status_code=403, detail="Acesso negado: Rota exclusiva para administradores do sistema.")
 
-    # 3. Métricas de Negócio SaaS (Usuários Free vs Pro e MRR)
     qtd_free = db.query(Usuario).filter(Usuario.is_premium == False).count()
     qtd_pro = db.query(Usuario).filter(Usuario.is_premium == True).count()
     mrr = round(qtd_pro * 149.90, 2)
 
-    # 4. Consome os dados do microsserviço de log
-    try:
-        resposta = requests.get(f"{LOG_URL}/logs?limite=100", timeout=5)
-        logs = resposta.json().get("logs", []) if resposta.status_code == 200 else []
-    except Exception as e:
-        print(f"Erro ao buscar logs: {e}")
-        logs = []
-
-    # 5. Busca os nomes dos usuários para enriquecer os logs
-    usuarios = db.query(Usuario).all()
-    usuarios_db = {str(u.id): u.nome for u in usuarios}
-
-    for log in logs:
-        uid = log.get("usuario_id")
-        log["nome_usuario"] = usuarios_db.get(uid, f"ID {uid}")
+    logs_db = db.execute(text("SELECT * FROM logs_auditoria ORDER BY data_hora DESC LIMIT 100")).fetchall()
+    usuarios_db = {str(u.id): u.nome for u in db.query(Usuario).all()}
+    
+    logs = []
+    for row in logs_db:
+        uid = str(row.usuario_id)
+        logs.append({
+            "id": row.id,
+            "usuario_id": uid,
+            "acao": row.acao,
+            "ip_origem": row.ip_origem,
+            "data_hora": row.data_hora.strftime("%d/%m/%Y %H:%M:%S") if row.data_hora else "",
+            "nome_usuario": usuarios_db.get(uid, f"ID {uid}")
+        })
 
     usuario_atual = db.query(Usuario).filter(Usuario.id == usuario_id).first()
     nome_admin = usuario_atual.nome if usuario_atual else "Admin"
 
-    return templates.TemplateResponse(
-        request, 
-        "auditoria.html", 
-        {
-            "logs": logs,
-            "role": role,
-            "nome_usuario": nome_admin,
-            "qtd_free": qtd_free,
-            "qtd_pro": qtd_pro,
-            "mrr": mrr
-        }
-    )
+    return templates.TemplateResponse(request, "auditoria.html", {
+        "logs": logs, "role": role, "nome_usuario": nome_admin, 
+        "qtd_free": qtd_free, "qtd_pro": qtd_pro, "mrr": mrr
+    })
 
 @app.get("/avatar/{nome_arquivo}")
 def obter_avatar(nome_arquivo: str):
