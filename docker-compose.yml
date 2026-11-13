@@ -1,12 +1,56 @@
 version: '3.8'
 
 services:
+  db:
+    image: mariadb:latest
+    container_name: nexatopo_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: nexatopo_db
+    volumes:
+      - db_data_m:/var/lib/mysql
+
+  minio:
+    image: ghcr.io/coollabsio/minio:latest
+    container_name: nexatopo_minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data_m:/data
+
+  redis:
+    image: redis:alpine
+    container_name: nexatopo_redis
+    restart: unless-stopped
+
   web:
     build: .
     container_name: nexatopo_web
     restart: unless-stopped
     ports:
       - "8221:8221"
-    volumes:
-      - ./nexageo_config.db:/app/nexageo_config.db
-      - ./uploads:/app/uploads
+    depends_on:
+      - db
+      - minio
+      - redis
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=nexatopo_db
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_USER}
+      - MINIO_SECRET_KEY=${MINIO_PASSWORD}
+      - MINIO_BUCKET_NAME=projetos-nexatopo
+      - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PRICE_ID=${STRIPE_PRICE_ID}
+      - SECRET_KEY=${SECRET_KEY}
+
+volumes:
+  db_data_m:
+  minio_data_m:
