@@ -21,7 +21,10 @@ from datetime import timedelta
 from minio import Minio
 from minio.error import S3Error
 import stripe
+from database import engine
+import models
 
+models.Base.metadata.create_all(bind=engine)
 
 # ==========================================
 # CONFIGURAÇÃO DO MINIO (OBJECT STORAGE)
