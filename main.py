@@ -23,6 +23,7 @@ from minio.error import S3Error
 import stripe
 from database import engine
 import models
+import bcrypt
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -106,16 +107,28 @@ def redirecionar_catalogo():
     return RedirectResponse(url="/dashboard", status_code=303)
 
 @app.post("/cadastrar")
-def cadastrar_usuario(request: Request, nome: str = Form(...), email: str = Form(...), senha: str = Form(...)):
+def cadastrar_usuario(request: Request, nome: str = Form(...), email: str = Form(...), senha: str = Form(...), db: Session = Depends(get_db)):
     try:
-        resposta = requests.post(f"{AUTH_URL}/cadastrar", json={"nome": nome, "email": email, "senha": senha}, timeout=10)
-        if resposta.status_code == 200:
-            return RedirectResponse(url="/login?msg=cadastro_sucesso", status_code=303)
+        # Verifica se o email já existe no banco
+        usuario_existente = db.query(Usuario).filter(Usuario.email == email).first()
+        if usuario_existente:
+            return RedirectResponse(url="/cadastrar?msg=erro_cadastro", status_code=303)
         
-        print(f"[DEBUG AUTH] Erro no cadastro: {resposta.text}")
-        return RedirectResponse(url="/cadastrar?msg=erro_cadastro", status_code=303)
-    except requests.exceptions.RequestException as e:
-        print(f"[DEBUG AUTH] Erro de rede no cadastro: {e}")
+        # Encripta a password com bcrypt
+        salt = bcrypt.gensalt()
+        senha_hasheada = bcrypt.hashpw(senha.encode('utf-8'), salt).decode('utf-8')
+        
+        # Cria e guarda o utilizador diretamente no banco de dados do NexaTopoGeo
+        novo_usuario = Usuario(nome=nome, email=email, senha=senha_hasheada, is_premium=False, role="usuario")
+        db.add(novo_usuario)
+        db.commit()
+        db.refresh(novo_usuario)
+        
+        return RedirectResponse(url="/login?msg=cadastro_sucesso", status_code=303)
+        
+    except Exception as e:
+        print(f"[DEBUG AUTH] Erro ao gravar usuário no BD: {e}")
+        db.rollback()
         return RedirectResponse(url="/cadastrar?msg=erro_offline", status_code=303)
 
 @app.post("/login")
