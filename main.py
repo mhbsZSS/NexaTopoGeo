@@ -116,10 +116,10 @@ def cadastrar_usuario(request: Request, nome: str = Form(...), email: str = Form
         
         # Encripta a password com bcrypt
         salt = bcrypt.gensalt()
-        senha_hasheada = bcrypt.hashpw(senha.encode('utf-8'), salt).decode('utf-8')
+        senha_hash = bcrypt.hashpw(senha.encode('utf-8'), salt).decode('utf-8')
         
         # Cria e guarda o utilizador diretamente no banco de dados do NexaTopoGeo
-        novo_usuario = Usuario(nome=nome, email=email, senha=senha_hasheada, is_premium=False, role="usuario")
+        novo_usuario = Usuario(nome=nome, email=email, senha_hash=senha_hash, is_premium=False, role="usuario")
         db.add(novo_usuario)
         db.commit()
         db.refresh(novo_usuario)
