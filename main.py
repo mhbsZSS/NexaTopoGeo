@@ -30,6 +30,15 @@ from email.mime.multipart import MIMEMultipart
 
 models.Base.metadata.create_all(bind=engine)
 
+try:
+    with engine.connect() as conn:
+        conn.execute(text("ALTER TABLE vertices ADD COLUMN IF NOT EXISTS origem VARCHAR(50) DEFAULT 'SIGEF'"))
+        # Nova migração para o token de password
+        conn.execute(text("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_token VARCHAR(100) DEFAULT NULL"))
+        conn.commit()
+except Exception as e:
+    print(f"[DB AUTO-MIGRATION] Falha ou coluna já existente: {e}")
+
 # ==========================================
 # SEED: CRIAÇÃO DO SUPER ADMIN AUTOMÁTICA
 # ==========================================
@@ -83,15 +92,6 @@ except S3Error as e:
     print(f"Erro ao conectar com o MinIO: {e}")
 
 app = FastAPI(title="NexaTopoGeo App")
-
-try:
-    with engine.connect() as conn:
-        conn.execute(text("ALTER TABLE vertices ADD COLUMN IF NOT EXISTS origem VARCHAR(50) DEFAULT 'SIGEF'"))
-        # Nova migração para o token de password
-        conn.execute(text("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS reset_token VARCHAR(100) DEFAULT NULL"))
-        conn.commit()
-except Exception as e:
-    print(f"[DB AUTO-MIGRATION] Falha ou coluna já existente: {e}")
 
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY"))
 templates = Jinja2Templates(directory="templates")
