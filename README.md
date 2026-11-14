@@ -174,7 +174,8 @@ python -c "from database import engine, Base; from models import *; Base.metadat
 
 O relatório completo detalhando a arquitetura, desafios e implementação desta atividade encontra-se disponível no diretório de documentação:
 
-📄 Relatório P2 - Consolidado de Arquitetura e Atividades (PDF
+* 📄 **[Relatório P2 - Consolidado de Arquitetura e Atividades (PDF)](docs/P2_ISW055_Marcio_Silva.pdf)**
+
 ---
 
 ## 👨‍💻 Autor e Mentoria
