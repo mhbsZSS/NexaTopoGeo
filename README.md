@@ -168,7 +168,13 @@ Para criar as tabelas manualmente via terminal Python dentro do ambiente virtual
 ```bash
 python -c "from database import engine, Base; from models import *; Base.metadata.create_all(bind=engine)"
 ```
+---
 
+## 📄 7. Documentação e Relatório Técnico
+
+O relatório completo detalhando a arquitetura, desafios e implementação desta atividade encontra-se disponível no diretório de documentação:
+
+📄 Relatório P2 - Consolidado de Arquitetura e Atividades (PDF
 ---
 
 ## 👨‍💻 Autor e Mentoria
